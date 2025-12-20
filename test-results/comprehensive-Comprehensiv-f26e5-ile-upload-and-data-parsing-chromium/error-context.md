@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "A ARM" [level=1] [ref=e5]:
+        - generic [ref=e7]: A
+        - generic [ref=e8]: ARM
+      - navigation [ref=e9]:
+        - link "Dashboard" [ref=e10] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e11]
+          - text: Dashboard
+        - link "New Pre-Auth" [ref=e16] [cursor=pointer]:
+          - /url: /preauth
+          - img [ref=e17]
+          - text: New Pre-Auth
+        - link "New Appeal" [ref=e20] [cursor=pointer]:
+          - /url: /appeal
+          - img [ref=e21]
+          - text: New Appeal
+        - link "Auto-Fill Forms" [ref=e23] [cursor=pointer]:
+          - /url: /forms
+          - img [ref=e24]
+          - text: Auto-Fill Forms
+        - link "Policies (Brain)" [ref=e27] [cursor=pointer]:
+          - /url: /admin/policies
+          - img [ref=e28]
+          - text: Policies (Brain)
+        - link "History" [ref=e30] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e31]
+          - text: History
+        - link "Settings" [ref=e35] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - img [ref=e36]
+          - text: Settings
+      - generic [ref=e39]:
+        - generic [ref=e40]: v0.1.0 • MedAI
+        - button "Sign Out" [ref=e41]
+    - main [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]: Dashboard
+          - generic [ref=e47]: /
+          - generic [ref=e48]: New Pre-Authorization
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - button "Document Preview" [ref=e53]:
+                  - img [ref=e54]
+                  - text: Document Preview
+                - button "Edit Source" [ref=e57]:
+                  - img [ref=e58]
+                  - text: Edit Source
+              - generic [ref=e60]:
+                - generic "Good" [ref=e61]:
+                  - generic [ref=e62]: "AI Confidence:"
+                  - generic [ref=e63]: 9/10
+                - button "Copy" [ref=e64]:
+                  - img [ref=e65]
+                  - text: Copy
+                - button "Save as PDF" [ref=e68]:
+                  - img [ref=e69]
+                  - text: Save as PDF
+                - button "Regenerate" [ref=e72]:
+                  - img [ref=e73]
+                  - text: Regenerate
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - generic [ref=e80]:
+                  - img [ref=e81]
+                  - text: Human Review
+                - generic [ref=e84]:
+                  - generic [ref=e85]: "Patient: John Doe"
+                  - generic [ref=e87]: "CPT: None"
+              - generic [ref=e88]:
+                - generic [ref=e89] [cursor=pointer]:
+                  - checkbox "Verify Codes" [ref=e90]
+                  - generic [ref=e91]: Verify Codes
+                - generic [ref=e92] [cursor=pointer]:
+                  - checkbox "Verify Clinical" [ref=e93]
+                  - generic [ref=e94]: Verify Clinical
+                - button "Review Required" [disabled] [ref=e95]
+            - article [ref=e97]:
+              - paragraph [ref=e98]: Medical Necessity Verified
+          - button "Start Over" [ref=e100]
+  - button "Open Next.js Dev Tools" [ref=e106] [cursor=pointer]:
+    - img [ref=e107]
+  - alert [ref=e110]
+```
