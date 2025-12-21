@@ -12,6 +12,7 @@ interface GenerateTextOptions {
 
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'openai') as AIProvider;
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o';
+const IS_RESPONSES_MODEL = AI_MODEL === 'gpt-5.2-pro';
 
 let openaiClient: OpenAI | null = null;
 if (AI_PROVIDER === 'openai') {
@@ -34,6 +35,15 @@ export async function generateText(options: GenerateTextOptions): Promise<string
                 messages.push({ role: 'system', content: systemPrompt });
             }
             messages.push({ role: 'user', content: userPrompt });
+
+            if (IS_RESPONSES_MODEL) {
+                // @ts-ignore - responses API might not be in the typed definition yet depending on version
+                const response = await openaiClient.responses.create({
+                    model: AI_MODEL,
+                    input: userPrompt, // Responses API uses 'input' string, not messages array for simple tasks
+                });
+                return response.output_text || '';
+            }
 
             const response = await openaiClient.chat.completions.create({
                 model: AI_MODEL,
