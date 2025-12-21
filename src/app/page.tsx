@@ -35,12 +35,14 @@ export default function LandingPage() {
               Now in Public Beta
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-slate-900 tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
-              Your "No-HIPAA" <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Prior Auth Audit Tool</span>
+              The Prior Authorization AI <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">You Can Use — Without HIPAA Risk</span>
             </h1>
-            <p className="text-xl text-slate-600 mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-              The AI that pre-audits your clinical notes for missing requirements and writes perfect appeal letters. <br />
-              <b>Zero Data Retention.</b>
+            <p className="text-xl text-slate-600 mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+              Pre-audit clinical notes, catch missing insurer requirements, and generate appeal letters — without storing or transmitting patient data.
+            </p>
+            <p className="text-sm font-medium text-slate-500 mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 bg-slate-50 inline-block px-4 py-2 rounded-lg border border-slate-100">
+              🔒 All PHI is redacted in your browser. We never store patient identifiers.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-200">
               {/*
@@ -77,28 +79,52 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">AI Denial Guard</h3>
               <p className="text-slate-600 leading-relaxed">
-                Stop denials before they happen. Our AI audits your notes for missing requirements (e.g., "Conservative therapy &gt; 6 weeks") <i>before</i> you submit.
+                Catch missing insurer requirements before submission. Our AI reviews your clinical notes against payer criteria (e.g., "Conservative therapy &gt; 6 weeks") so you submit once — not twice.
               </p>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
               <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
                 <Zap className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Instant Appeals</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Instant, Insurer-Specific Appeals</h3>
               <p className="text-slate-600">
-                Got a denial? Paste the reason and your notes. We generate a cited, insurer-specific appeal letter in seconds.
+                Paste the denial reason and clinical notes. We generate a payer-specific appeal letter with citations — ready to submit in seconds, not hours.
               </p>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-6">
                 <Lock className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Zero-Trust Privacy</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Zero-Trust Privacy by Design</h3>
               <p className="text-slate-600">
-                <b>We don't store PHI.</b> Patient data is redacted before it leaves your browser. Names & IDs are rehydrated locally only.
+                Patient identifiers are redacted before any processing. Only anonymized placeholders are used. Names and IDs are reinserted locally — never stored, never logged.
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* NEW: Who This Is For */}
+      <section className="py-20 bg-white border-b border-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-slate-100 text-slate-700 text-sm font-medium mb-8">
+            Built specifically for
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-4">
+              <div className="font-bold text-lg text-slate-900 mb-2">Small & Mid-Size Practices</div>
+              <p className="text-slate-500 text-sm">That can't afford compliance mistakes.</p>
+            </div>
+            <div className="p-4 border-l border-r border-slate-100">
+              <div className="font-bold text-lg text-slate-900 mb-2">In-House Billing Teams</div>
+              <p className="text-slate-500 text-sm">Facing overwhelmed staffing.</p>
+            </div>
+            <div className="p-4">
+              <div className="font-bold text-lg text-slate-900 mb-2">Practice Managers</div>
+              <p className="text-slate-500 text-sm">Handling prior auths and appeals manually.</p>
+            </div>
+          </div>
+          <p className="mt-10 text-slate-400 text-sm">Not an EHR. Not a billing system. Just a safety layer before submission.</p>
         </div>
       </section>
 
@@ -106,28 +132,28 @@ export default function LandingPage() {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-slate-900 mb-12">Security by Design.</h2>
+            <h2 className="text-3xl font-bold text-slate-900 mb-12">Privacy & Compliance</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center mb-4">
                   <CheckCircle className="w-8 h-8 text-emerald-500" />
                 </div>
                 <h3 className="font-bold text-slate-900 mb-2">Zero Data Retention</h3>
-                <p className="text-sm text-slate-600">We store [REDACTED] placeholders in our database. Your patient's name never touches our disk.</p>
+                <p className="text-sm text-slate-600">Patient names and identifiers never touch our servers. We store [REDACTED] placeholders.</p>
               </div>
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center mb-4">
                   <Lock className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="font-bold text-slate-900 mb-2">Encrypted Transit</h3>
-                <p className="text-sm text-slate-600">All traffic is encrypted via TLS 1.3. AI vendors receive only anonymized prompts.</p>
+                <h3 className="font-bold text-slate-900 mb-2">End-to-End Encryption</h3>
+                <p className="text-sm text-slate-600">Secure transmission from your browser to processing. All traffic is encrypted.</p>
               </div>
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center mb-4">
                   <ShieldCheck className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="font-bold text-slate-900 mb-2">Liability Free</h3>
-                <p className="text-sm text-slate-600">Since we never possess PHI, your compliance burden is minimized.</p>
+                <h3 className="font-bold text-slate-900 mb-2">Reduced Compliance Burden</h3>
+                <p className="text-sm text-slate-600">Because we never possess PHI, your risk exposure is minimized.</p>
               </div>
             </div>
           </div>
