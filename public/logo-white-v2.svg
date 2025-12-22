@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none" role="img" aria-label="ARM Health Logo">
+  <!-- Icon Group: BRAND STANDARD BLUE SHIELD -->
+  <path d="M30 6L10 14C10 14 6 46 30 58C54 46 50 14 50 14L30 6Z" fill="#1D4ED8"/>
+  <path d="M20 28 L28 36 L42 18" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="18" r="3.5" fill="#0EA5E9"/>
+
+  <!-- Typography -->
+  <text x="66" y="42" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="34" fill="#FFFFFF" letter-spacing="-1.5">ARM</text>
+  <text x="136" y="42" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="34" fill="#94A3B8" letter-spacing="-0.5">Health</text>
+</svg>

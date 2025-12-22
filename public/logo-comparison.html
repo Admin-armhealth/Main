@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARM Health Logo Evolution</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            padding: 4rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card.dark {
+            background: #0F172A;
+        }
+
+        .label {
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .card.dark .label {
+            color: #94a3b8;
+        }
+
+        img {
+            height: 60px;
+            width: auto;
+        }
+
+        p.note {
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="grid">
+        <!-- V1 -->
+        <div class="card">
+            <div class="label">Current Version (V1)</div>
+            <img src="./logo.svg" alt="V1">
+            <p class="note">Original Design<br>Generic spacing<br>Standard font weight</p>
+        </div>
+        <div class="card dark">
+            <div class="label">Current Version (V1) - Dark</div>
+            <img src="./logo-white.svg" alt="V1 White">
+        </div>
+
+        <!-- V2 -->
+        <div class="card" style="border: 2px solid #3b82f6;">
+            <div class="label" style="color: #2563eb;">Improved Version (V2)</div>
+            <img src="./logo-v2.svg" alt="V2">
+            <p class="note"><strong>Improvements:</strong><br>Tighter kerning (more unified)<br>Heavier "Health" (better
+                readability)<br>Refined Shield Shape</p>
+        </div>
+        <div class="card dark" style="border: 2px solid #3b82f6;">
+            <div class="label" style="color: #60a5fa;">Improved Version (V2) - Dark</div>
+            <img src="./logo-white-v2.svg" alt="V2 White">
+        </div>
+    </div>
+</body>
+
+</html>

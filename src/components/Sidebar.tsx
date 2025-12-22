@@ -21,12 +21,9 @@ export function Sidebar() {
     return (
         <div className="w-64 bg-slate-900 border-r border-slate-800 h-screen fixed left-0 top-0 flex flex-col text-white shadow-xl">
             <div className="p-6 border-b border-slate-800">
-                <h1 className="text-xl font-bold flex items-center tracking-tight">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
-                        <span className="text-white font-bold text-lg">A</span>
-                    </div>
-                    <span className="text-blue-100">ARM</span>
-                </h1>
+                <div className="flex items-center">
+                    <img src="/logo-white.svg" alt="ARM Health" className="h-8 w-auto" />
+                </div>
             </div>
             <nav className="flex-1 p-4 space-y-2">
                 {navItems.map((item) => {
