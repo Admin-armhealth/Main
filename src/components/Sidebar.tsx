@@ -14,7 +14,6 @@ export function Sidebar() {
         { name: 'New Appeal', href: '/appeal', icon: ShieldAlert },
         { name: 'Auto-Fill Forms', href: '/forms', icon: FileText },
         { name: 'Policies (Brain)', href: '/admin/policies', icon: BookOpen },
-        { name: 'History', href: '/history', icon: History },
         { name: 'Settings', href: '/settings', icon: Settings },
     ];
 

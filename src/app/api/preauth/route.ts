@@ -8,6 +8,7 @@ import { validateOrgAccess } from '@/lib/auth';
 import { requireOrgAccess } from '@/lib/server/authContext';
 import { extractJSON } from '@/lib/jsonUtils';
 import { redactPHI } from '@/lib/privacy';
+import { applyScoringGuardrails } from '@/lib/scoring_guardrails';
 
 export async function POST(req: NextRequest) {
     try {
@@ -108,74 +109,41 @@ export async function POST(req: NextRequest) {
             const critique = extractJSON(critiqueResponse);
 
             // ---------------------------------------------------------
-            // 🛡️ ENTERPRISE HARDENING: DETERMINISTIC SAFETY GATES
+            // 🛡️ ENTERPRISE HARDENING: Use External Guardrails
             // ---------------------------------------------------------
-            // REDACTED LOGS: console.log('🔍 DEBUG PRE-AUTH EVIDENCE:', ...);
+            const { auditData: gatedAuditData, logs } = applyScoringGuardrails(critique, specialty);
+            logs.forEach((log: string) => console.log(log));
 
-            let finalClinicalScore = critique.clinical_score ?? critique.approval_likelihood;
-            let finalOverallStatus = critique.overall_status;
-            let finalScoreBand = critique.score_band;
-            const evidence = critique.clinical_evidence_assessment || {};
-
-            // 1. Mismatch Kill Switch (Zero Tolerance)
-            // Relies on GPT-4o identifying the specific type.
-            const isMismatch = critique.primary_risk_factor?.type === 'clinical_mismatch';
-
-            // Secondary Safeguard: Only trigger text match on specific POSITIVE assertions
-            const riskFactors = critique.denial_risk_factors || [];
-            const hasExplicitMismatch = riskFactors.some((r: any) => {
-                const text = (typeof r === 'string' ? r : r.risk).toLowerCase();
-                // Check for "Mismatch found" or similar positive constraints, avoiding "No mismatch"
-                return (text.includes('body site mismatch') || text.includes('laterality mismatch')) &&
-                    !text.includes('no body site mismatch') && !text.includes('no laterality mismatch');
-            });
-
-            if (isMismatch || hasExplicitMismatch) {
-                finalClinicalScore = 0;
-                finalOverallStatus = 'blocked';
-                finalScoreBand = 'likely_denial';
-                console.log('🔴 HARD GATE: Blocked due to Clinical Mismatch');
-            }
-
-            // 2. Vague Logic Cap (Calibration)
-            // If PT is present but duration is missing/vague (< 6 weeks) OR strength is 'weak'/'missing'
-            // We cap the score at 35 to prevent "Human-like Optimism".
-            if (evidence.conservative_therapy?.present &&
-                (evidence.conservative_therapy?.duration_weeks < 6 || evidence.conservative_therapy?.strength !== 'strong')) {
-
-                // Only enforce cap if score is unreasonably high
-                if (finalClinicalScore > 35) {
-                    finalClinicalScore = 35;
-                    finalOverallStatus = 'blocked'; // Explicitly block vague cases
-                    finalScoreBand = 'likely_denial';
-                    console.log('🟠 HARD GATE: Capped score at 35 due to Vague Therapy Duration');
-                }
-            }
+            auditData = gatedAuditData;
 
             // Structure to return to frontend
+            // NOTE: auditData is already satisfying the structure because the guardrail function returns the full object
+            // We just need to ensure any extra fields we want to add are merged if not already there.
+            // But actually, the guardrail function takes 'critique' which has most of these fields.
+            // Let's re-map explicitly to be safe related to what the helper returns vs what we need.
+
             auditData = {
-                approval_likelihood: finalClinicalScore,
-                clinical_score: finalClinicalScore, // Use gated score
-                admin_score: critique.admin_score,
-                overall_status: finalOverallStatus, // Use gated status
-                score_band: finalScoreBand, // Use gated band
-                score_band_label: critique.score_band_label,
-                delta_to_next_band: critique.delta_to_next_band,
-                next_band: critique.next_band,
-                simulated_verdict: critique.simulated_verdict,
-                primary_risk_factor: critique.primary_risk_factor,
+                approval_likelihood: gatedAuditData.clinical_score,
+                clinical_score: gatedAuditData.clinical_score,
+                admin_score: gatedAuditData.admin_score,
+                overall_status: gatedAuditData.overall_status,
+                score_band: gatedAuditData.score_band,
+                score_band_label: gatedAuditData.score_band_label,
+                delta_to_next_band: gatedAuditData.delta_to_next_band,
+                next_band: gatedAuditData.next_band,
+                simulated_verdict: gatedAuditData.simulated_verdict,
+                primary_risk_factor: gatedAuditData.primary_risk_factor,
 
-                clinical_evidence_assessment: critique.clinical_evidence_assessment, // Pass through new schema
+                clinical_evidence_assessment: gatedAuditData.clinical_evidence_assessment,
 
-                confidence_level: critique.confidence_level,
-                checklist: critique.checklist,
-                missing_info: critique.missing_info,
-                denial_risk_factors: critique.denial_risk_factors,
+                confidence_level: gatedAuditData.confidence_level,
+                checklist: gatedAuditData.checklist,
+                missing_info: gatedAuditData.missing_info,
+                denial_risk_factors: gatedAuditData.denial_risk_factors,
 
-                // Appeal fields (optional)
-                strategy_used: critique.strategy_used,
-                appeal_recommendation: critique.appeal_recommendation,
-                key_evidence_used: critique.key_evidence_used
+                strategy_used: gatedAuditData.strategy_used,
+                appeal_recommendation: gatedAuditData.appeal_recommendation,
+                key_evidence_used: gatedAuditData.key_evidence_used
             };
 
             // If improved_draft exists and score is low, use it? 
@@ -230,50 +198,10 @@ export async function POST(req: NextRequest) {
         const { userId, orgId } = authCtx;
         console.log(`✅ AUTH: User ${userId} in Org ${orgId}`);
 
-        // Auto-Save to requests table (History)
-        try {
-            // Re-instantiate service client for the WRITE operation (The helper used its own internal one)
-            const serviceClient = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.SUPABASE_SERVICE_ROLE_KEY!
-            );
+        // 🔒 HIPAA: HISTORY DISABLED
+        // We do NOT save the request to the DB.
 
-            const { data: savedRequest, error: saveError } = await serviceClient
-                .from('requests')
-                .insert({
-                    patient_name: null, // 🔒 HIPAA: No Name stored (Column exists for legacy schema)
-                    patient_id: null,   // 🔒 HIPAA: No ID stored
-                    payer: payer || 'Generic',
-                    status: 'generated',
-                    request_type: 'preauth',
-                    organization_id: orgId, // Trusted from headers because we validated it above
-                    user_id: userId,
-                    content: result,
-                    metadata: {
-                        cptCodes,
-                        icdCodes,
-                        approval_likelihood: auditData.approval_likelihood,
-                        checklist: auditData.checklist?.map((item: any) => ({
-                            ...item,
-                            evidence_excerpt: undefined // 🔒 SCRUB PHI QUOTES
-                        })),
-                        clinic: providerRaw?.clinicName
-                    }
-                })
-                .select('id')
-                .single();
-
-            if (saveError) {
-                console.error('Auto-Save Failed:', saveError);
-            } else {
-                console.log('Use-case Auto-Saved to History:', savedRequest?.id);
-            }
-
-            return NextResponse.json({ result, ...auditData, request_id: savedRequest?.id });
-        } catch (err) {
-            console.error('History Save Error:', err);
-            return NextResponse.json({ result, ...auditData }); // Return result even if save fails
-        }
+        return NextResponse.json({ result, ...auditData, request_id: undefined });
     } catch (error) {
         console.error('PreAuth API Error:', error);
         return NextResponse.json({ error: 'Failed to generate pre-authorization' }, { status: 500 });

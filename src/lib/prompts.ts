@@ -38,7 +38,13 @@ CRITICAL ORTHOPEDIC CRITERIA (DENIAL PREVENTION):
 CRITICAL GI CRITERIA:
 - "ALARM SYMPTOMS": explicitly check for weight loss, anemia, occult blood, or dysphagia.
 - FAMILY HISTORY: Note any first-degree relatives with Colon CA.
-- Previous Endoscopies: Summarize findings from last procedure if relevant.`
+- Previous Endoscopies: Summarize findings from last procedure if relevant.`,
+        'Dentistry': `
+CRITICAL DENTAL CRITERIA:
+- TOOTH NUMBERS: Specific tooth numbers (1-32) must be referenced explicitly.
+- PERIODONTAL STATUS: If applicable (Scaling/Root Planing), cite probing depths >4mm.
+- RADIOGRAPHS: Mention "Current X-Rays/Bitewings attached" or findings.
+- NECESSITY: Link fracture/decay directly to the specific tooth code.`
     };
     const specialtyInstruction = input.specialty && specialtyPrompts[input.specialty]
         ? `\n\nSPECIALTY INSTRUCTIONS for ${input.specialty.toUpperCase()}:${specialtyPrompts[input.specialty]}`
@@ -259,6 +265,8 @@ export function getCritiquePrompt(input: {
     isAppeal?: boolean;
 }): { systemPrompt: string; userPrompt: string } {
     const isAppeal = input.isAppeal || false;
+    const specialty = input.originalRequestParameters?.specialty || 'General';
+    const isDental = specialty === 'Dentistry';
 
     const systemPrompt = `You are a Medical Quality Assurance Auditor & Denial Prevention Specialist.
 Your job is to review AI-generated insurance letters and the source clinical notes to predict approval likelihood based on MEDICAL NECESSITY.
@@ -342,7 +350,17 @@ CRITICAL APPEAL GATES:
 2. If evidence explicitly contradicts the denial (e.g. Denial says "No PT", Note says "PT Done") -> Score > 75.
 3. If new evidence is completely missing -> Mark "appeal_recommended": false.
 ` : `
-SCORING RULES (Clinical):
+SCORING RULES (Clinical - ${specialty}):
+${isDental ? `
+- 0-39 (Likely Denial): Missing Tooth Numbers or no X-ray findings cited.
+- 40-69 (High Risk): Vague "pain" without objective findings (fracture, decay depth).
+- 70-84 (Borderline): Good history but missing specific periodontal probing depths if applicable.
+- 85+ (Strong Case): Tooth # specified, X-ray findings corroborated, clear medical necessity (decay/fracture).
+
+CRITICAL CHECKS:
+1. Are TOOTH NUMBERS (1-32) explicitly stated? If NO, clinical_score MUST be < 50.
+2. Is there objective evidence (X-ray, Probing Depth, Fracture)? If NO, strength_label="weak".
+` : `
 - 0-39 (Likely Denial): No therapy dates defined, vague pain only. "Tried PT" without duration = MAX 39.
 - 40-69 (High Risk): "Tried PT" but no duration. Missing exam findings. Body site mismatch.
 - 70-84 (Borderline): Good history but maybe missing specific imaging dates or functional formatting.
@@ -351,6 +369,7 @@ SCORING RULES (Clinical):
 CRITICAL CHECKS:
 1. Is "≥6 weeks of conservative therapy" explicitly stated? If NO, strength_label="weak" and clinical_score MUST be < 50.
 2. Is "mechanical dysfunction" mentioned? If NO, clinical_score MUST be < 70.
+`}
 3. Check for BODY SITE MISMATCH. Compare the CPT/Procedure Code description (e.g. "Knee Arthroscopy") against the body part in the notes (e.g. "Shoulder Pain"). IF THEY DO NOT MATCH (e.g. Knee vs Shoulder), you MUST set primary_risk_factor.type="clinical_mismatch" and risk="Body Site Mismatch".
 4. Check for MISSING ADMIN INFO (NPI, Tax ID). If missing, risk severity="critical".
 5. If durations are VAGUE (e.g. "a while", "some time", "years ago"), score MUST be < 40.
@@ -363,6 +382,16 @@ You are a STRICT AUDITOR. Do not "help" the input.
 `}
 `;
 
+    // 🛡️ HIPAA SAFETY: Sanitize the context before sending to AI
+    const safeContext = {
+        ...input.originalRequestParameters,
+        extractedText: input.originalRequestParameters?.extractedText
+            ? redactPHI(input.originalRequestParameters.extractedText)
+            : undefined,
+        patientRaw: undefined, // REMOVE explicitly
+        providerRaw: undefined // REMOVE explicitly (or keep minimal if needed, but safer to remove for critique)
+    };
+
     const userPrompt = `
 Policy / Payer Guidelines:
 """
@@ -370,7 +399,7 @@ ${input.policyContext || "Standard Clinical Guidelines apply."}
 """
 
 SOURCE CONTEXT (Clinical Notes & Metadata):
-${JSON.stringify(input.originalRequestParameters, null, 2)}
+${JSON.stringify(safeContext, null, 2)}
 
 DRAFT MESSAGE (To be audited):
 """

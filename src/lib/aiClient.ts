@@ -49,7 +49,8 @@ export async function generateText(options: GenerateTextOptions): Promise<string
                 model: AI_MODEL,
                 messages,
                 temperature,
-                max_tokens: maxTokens,
+                // @ts-ignore - max_completion_tokens is required for newer models (o1/o3)
+                max_completion_tokens: maxTokens,
                 response_format: jsonMode ? { type: 'json_object' } : undefined,
             });
 

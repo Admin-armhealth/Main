@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { logAudit } from '@/lib/logger';
 import { validateOrgAccess } from '@/lib/auth';
 import { requireOrgAccess } from '@/lib/server/authContext';
+import { redactPHI } from '@/lib/privacy';
 
 export async function POST(req: NextRequest) {
     try {
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
         // 1. Generate Appeal Letter
         const { systemPrompt, userPrompt } = getAppealPrompt({
             denialReason,
-            extractedText,
+            extractedText: redactPHI(extractedText, patientRaw?.name), // 🔒 HIPAA Redaction
             cptCodes,
             icdCodes,
-            patientRaw,
+            patientRaw, // Warning: Ensure propmts don't leak this raw object if not needed. getAppealPrompt handles it?
             providerRaw,
             templates
         });
@@ -130,34 +131,8 @@ export async function POST(req: NextRequest) {
 
         const result = draft; // Alias for consistency
 
-        // 3. Auto-Save to History
-        try {
-            // Re-instantiate service client for the WRITE operation (The helper used its own internal one)
-            const serviceClient = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.SUPABASE_SERVICE_ROLE_KEY!
-            );
-
-            await serviceClient.from('requests').insert({
-                patient_name: null,
-                patient_id: null,
-                payer: 'Appeal',
-                status: 'generated',
-                request_type: 'appeal', // DISTINCT TYPE
-                organization_id: orgId || null, // 🛡️ BIND TO ORG
-                user_id: userId || null, // 🛡️ BIND TO USER
-                content: draft,
-                metadata: {
-                    cptCodes,
-                    icdCodes,
-                    denialReason,
-                    approval_likelihood: auditData.approval_likelihood,
-                    checklist: auditData.checklist
-                }
-            });
-        } catch (err) {
-            console.error('History Save Error:', err);
-        }
+        // 🔒 HIPAA: HISTORY DISABLED
+        // We do NOT save to DB.
 
         return NextResponse.json({ result: draft, ...auditData });
     } catch (error) {

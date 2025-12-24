@@ -1,0 +1,20 @@
+INSURER: Aetna
+DATE: 01/05/2025
+RE: AUTH REQUEST #999999
+SERVICE: CPT 29881 (Knee Arthroscopy)
+
+STATUS: DENIED
+
+REASON FOR DENIAL:
+We have reviewed your request for Right Knee Arthroscopy.
+Based on Clinical Policy Bulletin 0001 (Meniscal Surgery), coverage is provided only when there is documentation of:
+1. Significant mechanical symptoms (locking/catching).
+2. Failure of at least 6 weeks of provider-supervised physical therapy.
+3. MRI confirmation of tear.
+
+Your request is denied because the submitted documentation did not verify requirement #2. The notes state "Patient tried PT" but did not provide specific start/end dates or discharge summary to confirm the 6-week duration requirement was met.
+
+Therefore, the service is considered Not Medically Necessary.
+
+APPEAL RIGHTS:
+You have the right to appeal this decision within 180 days...

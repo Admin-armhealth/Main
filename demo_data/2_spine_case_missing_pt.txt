@@ -1,0 +1,21 @@
+ENC DATE: 1/20/2025
+PROVIDER: Dr. Jones - Spine Center
+
+HPI:
+Patient complains of lower back pain radiating to L leg for "a few years".
+Numbness in L big toe.
+Wants surgery to fix it.
+
+EXAM:
+SLR positive on Left at 45 deg.
+Weakness in L EHL (4/5).
+Reflexes 1+.
+
+MRI L-Spine:
+L4-L5 disc herniation compressing L5 nerve root.
+
+PLAN:
+L4-L5 Microdiscectomy (CPT 63030).
+Please authorize.
+
+(NOTE FOR DEMO: This case SHOULD be flagged by the AI for missing "Conservative Therapy Duration" and specific dates. It is a "Bad" note to test the auditor.)

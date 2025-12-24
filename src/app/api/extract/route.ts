@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from '@/lib/aiClient';
+import { redactPHI } from '@/lib/privacy';
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest) {
         if (!text) {
             return NextResponse.json({ error: 'Missing text' }, { status: 400 });
         }
+
+        // 🔒 HIPAA: Redact PHI before extracting structure
+        const redactedText = redactPHI(text);
 
         const systemPrompt = `You are a medical data extraction assistant. Extract structured data from the provided clinical text.
 Return a valid JSON object with the following structure:
@@ -20,7 +24,7 @@ Return a valid JSON object with the following structure:
 }
 If a field is not found, omit it.`;
 
-        const userPrompt = `CLINICAL TEXT:\n"""\n${text}\n"""`;
+        const userPrompt = `CLINICAL TEXT:\n"""\n${redactedText}\n"""`;
 
         const jsonStr = await generateText({
             systemPrompt,

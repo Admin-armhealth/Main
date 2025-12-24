@@ -51,7 +51,7 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
     const [providerTin, setProviderTin] = useState('');
 
     const payers = ['Aetna', 'Cigna', 'UnitedHealthcare', 'BCBS', 'Medicare', 'Other'];
-    const specialties = ['General Practice', 'Cardiology', 'Orthopedics', 'Gastroenterology', 'Neurology'];
+    const specialties = ['General Practice', 'Cardiology', 'Orthopedics', 'Gastroenterology', 'Neurology', 'Dentistry'];
     const tones = ['Standard', 'Urgent', 'Academic', 'Persuasive', 'Friendly'];
 
     // State for auto-saved shortcuts
@@ -207,7 +207,70 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
 
             if (fillRes.ok) {
                 const m = await fillRes.json();
+
+                // -------------------------------------------------------------
+                // 📸 SCANNED PDF FALLBACK (Client-Side OCR)
+                // -------------------------------------------------------------
+                if (m.requiresOCR) {
+                    console.log('Scanned PDF detected. Switching to Client-Side OCR...');
+                    const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+
+                    // Set worker (Important for Next.js)
+                    if (!GlobalWorkerOptions.workerSrc) {
+                        GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs`;
+                    }
+
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await getDocument({ data: arrayBuffer }).promise;
+
+                    let fullOcrText = '';
+                    const { createWorker } = await import('tesseract.js');
+                    const worker = await createWorker('eng');
+
+                    console.log(`Processing ${pdf.numPages} pages...`);
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.0 }); // High scale for better OCR
+
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        if (context) {
+                            // Correct property for pdfjs-dist
+                            await page.render({ canvasContext: context, viewport }).promise;
+                            const ret = await worker.recognize(canvas);
+                            fullOcrText += ret.data.text + '\n\n';
+                        }
+                    }
+
+                    await worker.terminate();
+                    console.log('PDF OCR Complete.');
+
+                    // Update the extracted text with OCR result
+                    setExtractedText(fullOcrText); // Fix: Use setter
+                    m.text = fullOcrText; // Update metadata object for auto-fill call below if needed
+
+                    // RE-RUN Auto-Fill with the OCR Text
+                    const retryRes = await fetch('/api/extract', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: fullOcrText }),
+                    });
+
+                    if (retryRes.ok) {
+                        const retryMeta = await retryRes.json();
+                        // Merge retry metadata
+                        m.patient = retryMeta.patient || m.patient;
+                        m.payer = retryMeta.payer || m.payer;
+                        m.provider = retryMeta.provider || m.provider;
+                    }
+                }
+
                 let autoFilled = [];
+
                 if (m.patient?.name) { setPatientName(m.patient.name); autoFilled.push('Name'); }
                 if (m.patient?.dob) { setPatientDob(m.patient.dob); autoFilled.push('DOB'); }
                 if (m.patient?.id) { setPatientId(m.patient.id); autoFilled.push('ID'); }
@@ -541,6 +604,7 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
                                         { label: 'Knee Repl', cpt: '27447', icd: 'M17.11' },
                                         { label: 'PT Eval', cpt: '97161', icd: 'M54.5' },
                                         { label: 'Sleep Study', cpt: '95810', icd: 'G47.33' },
+                                        { label: 'Dental Crown', cpt: 'D2740', icd: 'K02.9' },
                                     ].map((proc) => (
                                         <button
                                             key={proc.label}

@@ -1,0 +1,33 @@
+ENC DATE: 1/15/2025
+PROVIDER: Dr. Sarah Smith, MD - Downtown Orthopedics
+PATIENT: John Doe (DOB: 05/20/1980)
+
+SUBJECTIVE:
+45yo male presents with R knee pain. States he twisted it playing basketball 3 months ago.
+Pain is medial, sharp, 7/10. Worse with twisting and squatting.
+Has occasional locking/catching.
+TRIED:
+- Ibuprofen 600mg TID for 3 months.
+- Rest and Ice.
+- PT: Completed 8 weeks of formal PT at Athletico (11/01/24 - 01/01/25). Says "it helped a little but pain came back".
+
+OBJECTIVE:
+Gait: Antalgic.
+R Knee: 
+- Mild effusion (+1).
+- TENDER to palpation at medial joint line.
+- ROM: 0-120 (pain at end range).
+- STABILITY: ACL/PCL stable.
+- SPECIAL TESTS: (+) McMurray medial. (-) Lachman.
+
+IMAGING:
+MRI Right Knee (12/20/24) reads: 
+"Complex tear of the posterior horn of the medial meniscus. Moderate joint effusion. Ligaments intact."
+
+ASSESSMENT:
+1. Right knee medial meniscus tear (S83.231A).
+2. Failed conservative therapy (>6 weeks).
+
+PLAN:
+Rec: Arthroscopic partial medial meniscectomy (CPT 29881).
+Risks/benefits discussed. Auth needed.
