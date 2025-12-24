@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Download, RefreshCw, CheckCheck, FileText, Code, Edit3, ShieldAlert } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { SubmissionPackButton } from './SubmissionPackButton';
+
 
 interface OutputEditorProps {
     initialContent: string;
@@ -106,10 +106,11 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
                     scale: 2,
                     useCORS: true,
                     logging: true,
-                    scrollY: 0, // Force top of document
-                    windowWidth: document.getElementById('preview-content')?.scrollWidth, // Capture full width
+                    scrollY: 0,
+                    windowWidth: 1200, // Force desktop width for rendering
                     letterRendering: true,
                 },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             } as any;
 
@@ -129,10 +130,12 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
 
             // Style it to be invisible but rendered
             Object.assign(clonedElement.style, {
-                position: 'fixed',
+                position: 'absolute',
                 left: '-9999px',
                 top: '0',
-                width: `${element.offsetWidth}px`, // Preserve width
+                width: '800px', // Standardize width for Letter PDF
+                height: 'auto', // Allow full expansion
+                overflow: 'visible',
                 zIndex: '-1000'
             });
             document.body.appendChild(clonedElement);
@@ -200,8 +203,8 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
                         onClick={handleCopy}
                         disabled={!isFullyVerified}
                         className={`flex items-center px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors shadow-sm active:scale-95 ${isFullyVerified
-                                ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
-                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                            ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
+                            : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                         title={!isFullyVerified ? "Please complete verification below" : "Copy to clipboard"}
                     >
@@ -212,19 +215,14 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
                         onClick={handleDownloadPDF}
                         disabled={!isFullyVerified}
                         className={`flex items-center px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors shadow-sm active:scale-95 ${isFullyVerified
-                                ? 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700'
-                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                            ? 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700'
+                            : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                         title={!isFullyVerified ? "Please complete verification below" : "Download PDF"}
                     >
                         <Download className={`w-3.5 h-3.5 mr-1.5 ${isFullyVerified ? 'text-blue-100' : 'text-slate-300'}`} /> Save as PDF
                     </button>
-                    {/* {requestId && (
-                        <SubmissionPackButton
-                            requestId={requestId}
-                            patientName={extractedData?.patientRaw?.name}
-                        />
-                    )} */}
+
                     <button
                         onClick={onRegenerate}
                         disabled={isGenerating}
