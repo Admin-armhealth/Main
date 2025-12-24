@@ -28,7 +28,10 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
     // Verification State
     const [verifiedCodes, setVerifiedCodes] = useState(false);
     const [verifiedClinical, setVerifiedClinical] = useState(false);
-    const [verifiedPatient, setVerifiedPatient] = useState(false);
+    // const [verifiedPatient, setVerifiedPatient] = useState(false); // Unused
+    const [verifiedLiability, setVerifiedLiability] = useState(false);
+
+    const isFullyVerified = verifiedCodes && verifiedClinical && verifiedLiability;
 
     // 🔒 REHYDRATION: Restore Real Names for Display Only (Never stored on server)
     const rehydratePHI = (text: string) => {
@@ -195,16 +198,26 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
 
                     <button
                         onClick={handleCopy}
-                        className="flex items-center px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors shadow-sm active:scale-95"
+                        disabled={!isFullyVerified}
+                        className={`flex items-center px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors shadow-sm active:scale-95 ${isFullyVerified
+                                ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
+                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
+                        title={!isFullyVerified ? "Please complete verification below" : "Copy to clipboard"}
                     >
-                        {copied ? <CheckCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 mr-1.5 text-slate-400" />}
+                        {copied ? <CheckCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> : <Copy className={`w-3.5 h-3.5 mr-1.5 ${isFullyVerified ? 'text-slate-400' : 'text-slate-300'}`} />}
                         {copied ? 'Copied' : 'Copy'}
                     </button>
                     <button
                         onClick={handleDownloadPDF}
-                        className="flex items-center px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors shadow-sm active:scale-95"
+                        disabled={!isFullyVerified}
+                        className={`flex items-center px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors shadow-sm active:scale-95 ${isFullyVerified
+                                ? 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700'
+                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
+                        title={!isFullyVerified ? "Please complete verification below" : "Download PDF"}
                     >
-                        <Download className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Save as PDF
+                        <Download className={`w-3.5 h-3.5 mr-1.5 ${isFullyVerified ? 'text-blue-100' : 'text-slate-300'}`} /> Save as PDF
                     </button>
                     {/* {requestId && (
                         <SubmissionPackButton
@@ -223,52 +236,67 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
                 </div>
             </div>
 
-            {/* Human Review Layer */}
-            <div className="bg-amber-50 border-b border-amber-100 p-3 px-4 flex flex-col md:flex-row md:items-start justify-between gap-3 text-sm">
+            {/* Human Review & Sign-Off Layer */}
+            <div className="bg-amber-50 border-b border-amber-100 p-4">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between">
 
-                <div className="flex-1">
-                    <div className="flex items-center space-x-4 text-amber-900 mb-1">
-                        <span className="font-bold flex items-center text-xs uppercase tracking-wider text-amber-600/80">
-                            <CheckCheck className="w-3 h-3 mr-1" /> Human Review
-                        </span>
-                        {extractedData && (
-                            <div className="hidden md:flex items-center space-x-3 text-xs opacity-75">
-                                <span>Patient: <b>{extractedData.patientRaw?.name || 'N/A'}</b></span>
-                                <span className="w-1 h-3 border-r border-amber-300/50"></span>
-                                <span>CPT: <b>{extractedData.cptCodes?.join(', ') || 'None'}</b></span>
-                            </div>
-                        )}
+                    {/* Left: Next Steps / Manifest */}
+                    <div className="flex-1 bg-white/50 rounded-lg p-3 border border-amber-100">
+                        <h4 className="flex items-center text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+                            <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
+                            Next Steps & Submission Manifest
+                        </h4>
+                        <p className="text-xs text-amber-800 mb-2 leading-relaxed">
+                            This generated ID is <b>Reference Only</b>. To submit to the payer, you must bundle this letter with:
+                        </p>
+                        <ul className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] font-semibold text-amber-900">
+                            <li className="flex items-center bg-amber-100/50 px-2 py-1.5 rounded border border-amber-200/50">
+                                <span className="mr-1.5">1.</span> Original Clinical Notes
+                            </li>
+                            <li className="flex items-center bg-amber-100/50 px-2 py-1.5 rounded border border-amber-200/50">
+                                <span className="mr-1.5">2.</span> Imaging Reports (PDF)
+                            </li>
+                            <li className="flex items-center bg-amber-100/50 px-2 py-1.5 rounded border border-amber-200/50">
+                                <span className="mr-1.5">3.</span> Patient Insurance Card
+                            </li>
+                        </ul>
                     </div>
 
-                    {/* 🚨 CRITICAL AI FEEDBACK: Show "Reasoning" if score is low */}
-                    {qualityData?.score !== undefined && qualityData.score !== null && qualityData.score < 80 && qualityData.reasoning && (
-                        <div className="mt-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
-                            <strong className="block mb-1 font-semibold flex items-center">
-                                <ShieldAlert className="w-3 h-3 mr-1" /> Denial Risk Detected:
-                            </strong>
-                            {qualityData.reasoning}
+                    {/* Right: Active Verification */}
+                    <div className="xl:w-[28rem] flex flex-col justify-center space-y-3 pl-0 xl:pl-4 xl:border-l border-amber-200/50">
+                        <div className="flex items-center justify-between text-xs font-medium text-amber-900/60 mb-1">
+                            <span>Verification Protocol</span>
+                            <span className={isFullyVerified ? "text-emerald-600 font-bold" : "text-rose-500 font-bold"}>
+                                {isFullyVerified ? "✓ READY TO EXPORT" : "ACTION REQUIRED"}
+                            </span>
                         </div>
-                    )}
-                </div>
 
-                <div className="flex items-center space-x-4 self-start md:self-center mt-2 md:mt-0">
-                    <label className="flex items-center space-x-2 cursor-pointer group">
-                        <input type="checkbox" checked={verifiedCodes} onChange={(e) => setVerifiedCodes(e.target.checked)} className="rounded text-amber-600 focus:ring-amber-500 bg-white border-amber-300" />
-                        <span className="text-xs font-medium text-amber-800 group-hover:text-amber-900">Verify Codes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer group">
-                        <input type="checkbox" checked={verifiedClinical} onChange={(e) => setVerifiedClinical(e.target.checked)} className="rounded text-amber-600 focus:ring-amber-500 bg-white border-amber-300" />
-                        <span className="text-xs font-medium text-amber-800 group-hover:text-amber-900">Verify Clinical</span>
-                    </label>
-                    {onSave && (
-                        <button
-                            disabled={!verifiedCodes || !verifiedClinical}
-                            onClick={() => onSave(true)}
-                            className="bg-amber-100/50 hover:bg-emerald-100 text-amber-700 hover:text-emerald-700 px-3 py-1 rounded-md text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {verifiedCodes && verifiedClinical ? 'Verify & Sign' : 'Review Required'}
-                        </button>
-                    )}
+                        <div className="space-y-2">
+                            <label className="flex items-start space-x-2 cursor-pointer group p-1.5 hover:bg-amber-100/30 rounded transition-colors">
+                                <input type="checkbox" checked={verifiedCodes} onChange={(e) => setVerifiedCodes(e.target.checked)}
+                                    className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 bg-white border-amber-300" />
+                                <span className="text-[11px] font-medium text-amber-800 leading-tight">
+                                    I have verified that the <b>CPT & ICD-10 Codes</b> match the clinical notes.
+                                </span>
+                            </label>
+
+                            <label className="flex items-start space-x-2 cursor-pointer group p-1.5 hover:bg-amber-100/30 rounded transition-colors">
+                                <input type="checkbox" checked={verifiedClinical} onChange={(e) => setVerifiedClinical(e.target.checked)}
+                                    className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 bg-white border-amber-300" />
+                                <span className="text-[11px] font-medium text-amber-800 leading-tight">
+                                    I have verified the <b>Clinical Narrative</b> is factually accurate.
+                                </span>
+                            </label>
+
+                            <label className="flex items-start space-x-2 cursor-pointer group bg-amber-100/50 p-2 rounded border border-amber-200 transition-all hover:bg-amber-100">
+                                <input type="checkbox" checked={verifiedLiability} onChange={(e) => setVerifiedLiability(e.target.checked)}
+                                    className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 bg-white border-amber-400" />
+                                <span className="text-[11px] font-bold text-amber-900 leading-tight">
+                                    I attest that this content is AI-Generated/Assisted and I have verified it for submission safety.
+                                </span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
