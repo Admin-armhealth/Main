@@ -9,9 +9,31 @@ import { requireOrgAccess } from '@/lib/server/authContext';
 import { extractJSON } from '@/lib/jsonUtils';
 import { redactPHI } from '@/lib/privacy';
 import { applyScoringGuardrails } from '@/lib/scoring_guardrails';
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
     try {
+        // 🛡️ RATE LIMITING
+        const clientId = getClientIdentifier(req);
+        const rateLimitResult = checkRateLimit(clientId, RATE_LIMITS.AI_GENERATION);
+
+        if (!rateLimitResult.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'Rate limit exceeded. Please try again later.',
+                    retryAfter: rateLimitResult.retryAfter
+                },
+                {
+                    status: 429,
+                    headers: {
+                        'Retry-After': String(rateLimitResult.retryAfter),
+                        'X-RateLimit-Remaining': '0',
+                        'X-RateLimit-Reset': String(rateLimitResult.resetIn)
+                    }
+                }
+            );
+        }
+
         const body = await req.json();
         const { clinicType, specialty, extractedText, cptCodes, icdCodes, payer, patientRaw, providerRaw, templates: bodyTemplates } = body;
 

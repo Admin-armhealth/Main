@@ -36,16 +36,24 @@ export async function generateText(options: GenerateTextOptions): Promise<string
             }
             messages.push({ role: 'user', content: userPrompt });
 
+            // ⏱️ PERFORMANCE: Configurable timeout (default 60 seconds)
+            const AI_TIMEOUT_MS = parseInt(process.env.AI_TIMEOUT_MS || '60000', 10);
+
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error('AI request timed out')), AI_TIMEOUT_MS);
+            });
+
             if (IS_RESPONSES_MODEL) {
                 // @ts-ignore - responses API might not be in the typed definition yet depending on version
-                const response = await openaiClient.responses.create({
+                const responsePromise = openaiClient.responses.create({
                     model: AI_MODEL,
-                    input: userPrompt, // Responses API uses 'input' string, not messages array for simple tasks
+                    input: userPrompt,
                 });
+                const response = await Promise.race([responsePromise, timeoutPromise]);
                 return response.output_text || '';
             }
 
-            const response = await openaiClient.chat.completions.create({
+            const responsePromise = openaiClient.chat.completions.create({
                 model: AI_MODEL,
                 messages,
                 temperature,
@@ -54,8 +62,13 @@ export async function generateText(options: GenerateTextOptions): Promise<string
                 response_format: jsonMode ? { type: 'json_object' } : undefined,
             });
 
+            const response = await Promise.race([responsePromise, timeoutPromise]);
             return response.choices[0]?.message?.content || '';
-        } catch (error) {
+        } catch (error: any) {
+            if (error.message === 'AI request timed out') {
+                console.error('⏱️ AI Request Timeout: Request exceeded time limit');
+                throw new Error('AI request timed out. Please try again.');
+            }
             console.error('OpenAI API Error:', error);
             throw new Error('Failed to generate text using OpenAI provider');
         }

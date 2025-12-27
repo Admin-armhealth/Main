@@ -84,7 +84,7 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
             if (mode !== 'preview') {
                 setMode('preview');
                 // Allow render cycle to complete
-                await new Promise(resolve => setTimeout(resolve, 300)); // Increased timeout
+                await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for render
             }
 
             const element = document.getElementById('preview-content');
@@ -98,19 +98,28 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
             const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
             const filename = `Medical_PreAuth_${timestamp}.pdf`;
 
+            // CRITICAL FIX: Get the FULL scrollable height of the content
+            const fullHeight = element.scrollHeight;
+            const fullWidth = element.scrollWidth;
+            console.log(`Content dimensions: ${fullWidth}x${fullHeight}`);
+
             const opt = {
-                margin: [0.75, 0.5, 0.5, 0.5], // Top, Right, Bottom, Left (Increased Top to fix cutoff)
+                margin: [0.5, 0.5, 0.5, 0.5], // Uniform margins
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
                     logging: true,
+                    scrollX: 0,
                     scrollY: 0,
-                    windowWidth: 1200, // Force desktop width for rendering
-                    letterRendering: true,
+                    windowWidth: fullWidth,
+                    windowHeight: fullHeight, // CRITICAL: Set to full height
+                    height: fullHeight, // CRITICAL: Capture full height
+                    width: fullWidth,
                 },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+                // CRITICAL FIX: Allow page breaks naturally
+                pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: 'img' },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             } as any;
 
@@ -125,17 +134,18 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
 
             console.log('Generating PDF...');
             // CLONE and APPEND to body to ensure html2canvas can render computed styles
-            // (Detached nodes cause hangs/crashes in some versions of html2canvas)
             const clonedElement = element.cloneNode(true) as HTMLElement;
 
-            // Style it to be invisible but rendered
+            // CRITICAL FIX: Style clone to show FULL content, not constrained
             Object.assign(clonedElement.style, {
                 position: 'absolute',
                 left: '-9999px',
                 top: '0',
-                width: '800px', // Standardize width for Letter PDF
-                height: 'auto', // Allow full expansion
-                overflow: 'visible',
+                width: `${fullWidth}px`, // Use actual width
+                minHeight: `${fullHeight}px`, // Use actual height
+                height: 'auto', // Allow natural expansion
+                maxHeight: 'none', // Remove any max-height constraints
+                overflow: 'visible', // Ensure content is not hidden
                 zIndex: '-1000'
             });
             document.body.appendChild(clonedElement);

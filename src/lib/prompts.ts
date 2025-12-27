@@ -351,6 +351,7 @@ CRITICAL APPEAL GATES:
 3. If new evidence is completely missing -> Mark "appeal_recommended": false.
 ` : `
 SCORING RULES (Clinical - ${specialty}):
+
 ${isDental ? `
 - 0-39 (Likely Denial): Missing Tooth Numbers or no X-ray findings cited.
 - 40-69 (High Risk): Vague "pain" without objective findings (fracture, decay depth).
@@ -360,7 +361,7 @@ ${isDental ? `
 CRITICAL CHECKS:
 1. Are TOOTH NUMBERS (1-32) explicitly stated? If NO, clinical_score MUST be < 50.
 2. Is there objective evidence (X-ray, Probing Depth, Fracture)? If NO, strength_label="weak".
-` : `
+` : specialty === 'Orthopedics' ? `
 - 0-39 (Likely Denial): No therapy dates defined, vague pain only. "Tried PT" without duration = MAX 39.
 - 40-69 (High Risk): "Tried PT" but no duration. Missing exam findings. Body site mismatch.
 - 70-84 (Borderline): Good history but maybe missing specific imaging dates or functional formatting.
@@ -369,17 +370,18 @@ CRITICAL CHECKS:
 CRITICAL CHECKS:
 1. Is "≥6 weeks of conservative therapy" explicitly stated? If NO, strength_label="weak" and clinical_score MUST be < 50.
 2. Is "mechanical dysfunction" mentioned? If NO, clinical_score MUST be < 70.
+` : `
+- 0-39 (Likely Denial): Vague symptoms (e.g., "Chest pain", "Stomach ache") without biomarkers (Troponin, LVEF, Hemoglobin).
+- 40-69 (High Risk): Diagnosis asserted but key objective values (LVEF, Weight Loss kgs, Labs) missing.
+- 70-84 (Borderline): Good history and values, but might lack specific dates or prior failed trial details if applicable.
+- 85+ (Strong Case): Specific biomarkers present (e.g. "LVEF 45%", "Hgb 8.0"). Protocol criteria (Risk Score, Family Hx) fully documented.
 `}
-3. Check for BODY SITE MISMATCH. Compare the CPT/Procedure Code description (e.g. "Knee Arthroscopy") against the body part in the notes (e.g. "Shoulder Pain"). IF THEY DO NOT MATCH (e.g. Knee vs Shoulder), you MUST set primary_risk_factor.type="clinical_mismatch" and risk="Body Site Mismatch".
+3. Check for BODY SITE MISMATCH. Compare the CPT/Procedure Code description against the body part in the notes.
 4. Check for MISSING ADMIN INFO (NPI, Tax ID). If missing, risk severity="critical".
 5. If durations are VAGUE (e.g. "a while", "some time", "years ago"), score MUST be < 40.
-
-<h3>ANTI-HALLUCINATION PROTOCOL (CRITICAL):</h3>
-You are a STRICT AUDITOR. Do not "help" the input.
-- If the text says "Tried PT" but gives NO DATES and NO "6 weeks" count -> duration_weeks MUST BE 0.
-- Do NOT infer variables. If it's not written, it's NOT THERE.
-- "Completed PT" without a date range = duration_weeks: 0.
-`}
+6. ANTI-HALLUCINATION: Do NOT infer variables.
+`
+        }
 `;
 
     // 🛡️ HIPAA SAFETY: Sanitize the context before sending to AI

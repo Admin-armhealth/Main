@@ -7,9 +7,31 @@ import { logAudit } from '@/lib/logger';
 import { validateOrgAccess } from '@/lib/auth';
 import { requireOrgAccess } from '@/lib/server/authContext';
 import { redactPHI } from '@/lib/privacy';
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
     try {
+        // 🛡️ RATE LIMITING
+        const clientId = getClientIdentifier(req);
+        const rateLimitResult = checkRateLimit(clientId, RATE_LIMITS.AI_GENERATION);
+
+        if (!rateLimitResult.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'Rate limit exceeded. Please try again later.',
+                    retryAfter: rateLimitResult.retryAfter
+                },
+                {
+                    status: 429,
+                    headers: {
+                        'Retry-After': String(rateLimitResult.retryAfter),
+                        'X-RateLimit-Remaining': '0',
+                        'X-RateLimit-Reset': String(rateLimitResult.resetIn)
+                    }
+                }
+            );
+        }
+
         const body = await req.json();
         const { denialReason, extractedText, cptCodes, icdCodes, patientRaw, providerRaw } = body;
 

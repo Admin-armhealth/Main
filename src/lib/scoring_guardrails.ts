@@ -29,6 +29,7 @@ export function applyScoringGuardrails(
 ): AppliedScoringResult {
     const logs: string[] = [];
     const normalizedSpecialty = specialty ? specialty.toLowerCase() : 'general';
+    console.log('DEBUG INTERNAL: Specialty:', normalizedSpecialty);
 
     let finalClinicalScore = critique.clinical_score ?? critique.approval_likelihood;
     let finalOverallStatus = critique.overall_status;
@@ -89,12 +90,14 @@ export function applyScoringGuardrails(
     // ---------------------------------------------------------
     // 🦴 ORTHOPEDIC / GENERAL GATES (Ignored for Dental)
     // ---------------------------------------------------------
-    else {
+    else if (normalizedSpecialty === 'orthopedics' || normalizedSpecialty === 'pain management') {
         // 2. Vague Logic Cap (Calibration) for PT/Conservative Therapy
         // If PT is present but duration is missing/vague (< 6 weeks) OR strength is 'weak'/'missing'
         // We cap the score at 35 to prevent "Human-like Optimism".
         if (evidence.conservative_therapy?.present &&
             (evidence.conservative_therapy?.duration_weeks < 6 || evidence.conservative_therapy?.strength !== 'strong')) {
+
+            console.log('DEBUG INTERNAL: Ortho Triggered. Score:', finalClinicalScore, 'Weeks:', evidence.conservative_therapy?.duration_weeks);
 
             // Only enforce cap if score is unreasonably high
             if (finalClinicalScore > 35) {

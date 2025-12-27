@@ -13,14 +13,12 @@ export default function LandingPage() {
             <img src="/logo.svg" alt="ARM Health" className="h-10 w-auto" />
           </div>
           <div className="flex items-center gap-4">
-            {/* 
             <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition">
               Sign In
             </Link>
             <Link href="/signup" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition shadow-sm shadow-blue-500/20">
               Get Started
-            </Link> 
-            */}
+            </Link>
           </div>
         </div>
       </nav>
@@ -44,14 +42,14 @@ export default function LandingPage() {
               🔒 All PHI is redacted in your browser. We never store patient identifiers.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-200">
-              {/*
               <Link href="/signup" className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 flex items-center justify-center">
                 Start Free Audit <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-              */}
+              {/*
               <Link href="#demo" className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition flex items-center justify-center">
                 See How It Works
               </Link>
+              */}
             </div>
           </div>
         </div>
