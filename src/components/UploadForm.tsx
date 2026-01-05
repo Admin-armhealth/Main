@@ -27,13 +27,23 @@ interface UploadFormProps {
         patientRaw?: { name: string; id: string; dob: string };
         providerRaw?: { name: string; npi: string; tin: string; clinicName: string };
     } | null;
+    uploadSegments?: {
+        label: string;
+        description: string;
+        key: string;
+        required?: boolean;
+    }[];
 }
 
-export function UploadForm({ onConfirm, title, description, initialValues }: UploadFormProps) {
+export function UploadForm({ onConfirm, title, description, initialValues, uploadSegments }: UploadFormProps) {
     const [extractedText, setExtractedText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // Defines which segment is currently being uploaded (if any)
+    const [activeSegmentKey, setActiveSegmentKey] = useState<string | null>(null);
+    // Store text for each segment: { denial: "...", notes: "..." }
+    const [segmentTexts, setSegmentTexts] = useState<Record<string, string>>({});
 
     // Manual code inputs
     const [cptInput, setCptInput] = useState('');
@@ -158,6 +168,22 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
         loadProfile();
     }, [initialValues]);
 
+    // Sync segments to extractedText
+    useEffect(() => {
+        if (!uploadSegments) return; // Only for segmented mode
+
+        // Join non-empty segments with headers
+        const parts = uploadSegments.map(seg => {
+            const text = segmentTexts[seg.key];
+            if (!text?.trim()) return null;
+            return `--- ${seg.label.toUpperCase()} ---\n${text}`;
+        }).filter(Boolean);
+
+        if (parts.length > 0) {
+            setExtractedText(parts.join('\n\n'));
+        }
+    }, [segmentTexts, uploadSegments]);
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -196,14 +222,32 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
                 }
             }
 
-            setExtractedText(extractedData);
+            // Update the extracted text (Append if exists)
 
-            // Auto-fill form with AI based on extracted text
+            if (uploadSegments && activeSegmentKey) {
+                setSegmentTexts(prev => ({
+                    ...prev,
+                    [activeSegmentKey]: extractedData
+                }));
+            } else {
+                setExtractedText(prev => {
+                    const separator = prev ? '\n\n----------------------------------------\n[NEXT DOCUMENT]\n----------------------------------------\n\n' : '';
+                    return prev + separator + extractedData;
+                });
+            }
+
+            // Auto-fill form with AI based on extracted text (Analyze the NEW chunk, but ideally we'd re-analyze all, 
+            // but for metadata usually the first doc (Referral/Denial) has the patients info.
+            // Let's keep analyzing just the new chunk to avoid token limits, or analyze full? 
+            // Analyzing just the new chunk is safer for speed.
             const fillRes = await fetch('/api/extract', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: extractedData }),
             });
+
+
+
 
             if (fillRes.ok) {
                 const m = await fillRes.json();
@@ -249,8 +293,19 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
                     await worker.terminate();
                     console.log('PDF OCR Complete.');
 
-                    // Update the extracted text with OCR result
-                    setExtractedText(fullOcrText); // Fix: Use setter
+                    // Update the extracted text with OCR result (Append)
+
+                    if (uploadSegments && activeSegmentKey) {
+                        setSegmentTexts(prev => ({
+                            ...prev,
+                            [activeSegmentKey]: fullOcrText
+                        }));
+                    } else {
+                        setExtractedText(prev => {
+                            const separator = prev ? '\n\n--- OCR RESULTS ---\n\n' : '';
+                            return prev + separator + fullOcrText;
+                        });
+                    }
                     m.text = fullOcrText; // Update metadata object for auto-fill call below if needed
 
                     // RE-RUN Auto-Fill with the OCR Text
@@ -298,6 +353,15 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
     };
 
     const handleConfirm = async () => {
+        if (uploadSegments) {
+            // Check required segments
+            const missing = uploadSegments.filter(s => s.required && !segmentTexts[s.key]);
+            if (missing.length > 0) {
+                setError(`Please upload: ${missing.map(m => m.label).join(', ')}`);
+                return;
+            }
+        }
+
         if (!extractedText.trim()) {
             setError('Please provide clinical text (upload PDF or type manually).');
             return;
@@ -413,33 +477,96 @@ export function UploadForm({ onConfirm, title, description, initialValues }: Upl
 
             <div className="p-8 space-y-8">
                 {/* Upload Section */}
-                <div
-                    className="group border-2 border-dashed border-slate-200 rounded-xl p-8 bg-slate-50/50 text-center hover:bg-blue-50/50 hover:border-blue-400/50 transition-all duration-300 cursor-pointer relative"
-                    onClick={() => fileInputRef.current?.click()}
-                >
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept=".pdf,.png,.jpg,.jpeg,.docx"
-                        onChange={handleFileUpload}
-                    />
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                        <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:scale-110 transition-transform duration-300 ring-1 ring-slate-100">
-                            {isProcessing ? (
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            ) : (
-                                <FileType className="w-8 h-8 text-blue-600" />
-                            )}
-                        </div>
-                        <div>
-                            <div className="text-sm font-medium text-slate-700">
-                                <span className="text-blue-600 hover:text-blue-700">Click to upload</span> or drag and drop
+                {/* Upload Section */}
+                {!uploadSegments ? (
+                    // ---------------- SINGLE UPLOAD MODE ----------------
+                    <div
+                        className="group border-2 border-dashed border-slate-200 rounded-xl p-8 bg-slate-50/50 text-center hover:bg-blue-50/50 hover:border-blue-400/50 transition-all duration-300 cursor-pointer relative"
+                        onClick={() => {
+                            setActiveSegmentKey(null);
+                            fileInputRef.current?.click();
+                        }}
+                    >
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".pdf,.png,.jpg,.jpeg,.docx"
+                            onChange={handleFileUpload}
+                        />
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                            <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:scale-110 transition-transform duration-300 ring-1 ring-slate-100">
+                                {isProcessing ? (
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                ) : (
+                                    <FileType className="w-8 h-8 text-blue-600" />
+                                )}
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG (max 10MB)</p>
+                            <div>
+                                <div className="text-sm font-medium text-slate-700">
+                                    <span className="text-blue-600 hover:text-blue-700">Click to upload</span> Sequential Files (Denial + Notes)
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Upload Denial Letter first, then Clinical Notes (PDF/Img)</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    // ---------------- SEGMENTED UPLOAD MODE ----------------
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".pdf,.png,.jpg,.jpeg,.docx"
+                            onChange={handleFileUpload}
+                        />
+                        {uploadSegments.map((seg) => {
+                            const hasFile = !!segmentTexts[seg.key];
+                            return (
+                                <div
+                                    key={seg.key}
+                                    onClick={() => {
+                                        setActiveSegmentKey(seg.key);
+                                        fileInputRef.current?.click(); // Reuse the same input ref, simplified
+                                    }}
+                                    className={`
+                                        group border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-300
+                                        ${hasFile
+                                            ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-300'
+                                            : 'border-slate-200 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-400/50'
+                                        }
+                                    `}
+                                >
+                                    <div className="flex flex-col items-center justify-center space-y-3">
+                                        <div className={`
+                                            p-3 rounded-2xl shadow-sm transition-transform duration-300 ring-1
+                                            ${hasFile ? 'bg-white ring-emerald-100' : 'bg-white group-hover:scale-110 ring-slate-100'}
+                                        `}>
+                                            {isProcessing && activeSegmentKey === seg.key ? (
+                                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                            ) : hasFile ? (
+                                                <CheckCheck className="w-6 h-6 text-emerald-500" />
+                                            ) : (
+                                                <FileText className="w-6 h-6 text-blue-600" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-slate-700">
+                                                {seg.label} {seg.required && <span className="text-red-500">*</span>}
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">{seg.description}</p>
+                                        </div>
+                                        {hasFile && (
+                                            <div className="text-[10px] text-emerald-600 font-medium bg-emerald-100 px-2 py-0.5 rounded-full">
+                                                Uploaded
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {error && (
                     <div className="flex items-center p-4 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100">

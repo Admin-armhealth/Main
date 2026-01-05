@@ -37,35 +37,37 @@ export async function generateText(options: GenerateTextOptions): Promise<string
             messages.push({ role: 'user', content: userPrompt });
 
             // ⏱️ PERFORMANCE: Configurable timeout (default 60 seconds)
+            // ⏱️ PERFORMANCE: Configurable timeout (default 60 seconds)
             const AI_TIMEOUT_MS = parseInt(process.env.AI_TIMEOUT_MS || '60000', 10);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
-            const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new Error('AI request timed out')), AI_TIMEOUT_MS);
-            });
+            try {
+                if (IS_RESPONSES_MODEL) {
+                    // @ts-ignore
+                    const response = await openaiClient.responses.create({
+                        model: AI_MODEL,
+                        input: userPrompt,
+                    }, { signal: controller.signal });
+                    return response.output_text || '';
+                }
 
-            if (IS_RESPONSES_MODEL) {
-                // @ts-ignore - responses API might not be in the typed definition yet depending on version
-                const responsePromise = openaiClient.responses.create({
+                const response = await openaiClient.chat.completions.create({
                     model: AI_MODEL,
-                    input: userPrompt,
-                });
-                const response = await Promise.race([responsePromise, timeoutPromise]);
-                return response.output_text || '';
+                    messages,
+                    temperature,
+                    // @ts-ignore
+                    max_completion_tokens: maxTokens,
+                    response_format: jsonMode ? { type: 'json_object' } : undefined,
+                }, { signal: controller.signal });
+
+                return response.choices[0]?.message?.content || '';
+
+            } finally {
+                clearTimeout(timeoutId);
             }
-
-            const responsePromise = openaiClient.chat.completions.create({
-                model: AI_MODEL,
-                messages,
-                temperature,
-                // @ts-ignore - max_completion_tokens is required for newer models (o1/o3)
-                max_completion_tokens: maxTokens,
-                response_format: jsonMode ? { type: 'json_object' } : undefined,
-            });
-
-            const response = await Promise.race([responsePromise, timeoutPromise]);
-            return response.choices[0]?.message?.content || '';
         } catch (error: any) {
-            if (error.message === 'AI request timed out') {
+            if (error.name === 'AbortError' || error.message === 'AI request timed out') {
                 console.error('⏱️ AI Request Timeout: Request exceeded time limit');
                 throw new Error('AI request timed out. Please try again.');
             }

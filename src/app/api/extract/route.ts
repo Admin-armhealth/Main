@@ -22,7 +22,8 @@ Return a valid JSON object with the following structure:
   "cpt": ["string (CPT, HCPCS, or J-Codes)"],
   "icd": ["string"]
 }
-If a field is not found, omit it.`;
+If a field is not found, omit it.
+CRITICAL: Look for "Provider:", "Treating Physician:", "Doctor:", "Dentist:", or signatures to find the provider name.`;
 
         const userPrompt = `CLINICAL TEXT:\n"""\n${redactedText}\n"""`;
 

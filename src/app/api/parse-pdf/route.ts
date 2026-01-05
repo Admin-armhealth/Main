@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
+        // SAFETY: Limit file size to 10MB to prevent memory exhaustion
+        if (file.size > 10 * 1024 * 1024) {
+            return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 413 });
+        }
+
         const buffer = Buffer.from(await file.arrayBuffer());
 
         let text = '';

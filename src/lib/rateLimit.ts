@@ -11,7 +11,16 @@ interface RateLimitRecord {
 }
 
 // In-memory store (per-server instance)
-const rateLimitStore = new Map<string, RateLimitRecord>();
+// GLOBAL PATCH: Attach to globalThis to survive HMR in development
+const globalStore = globalThis as unknown as {
+    _rateLimitStore?: Map<string, RateLimitRecord>;
+    _rateLimitInterval?: NodeJS.Timeout;
+};
+
+if (!globalStore._rateLimitStore) {
+    globalStore._rateLimitStore = new Map<string, RateLimitRecord>();
+}
+const rateLimitStore = globalStore._rateLimitStore;
 
 export interface RateLimitConfig {
     windowMs: number;      // Time window in milliseconds
@@ -129,6 +138,7 @@ export function cleanupRateLimits(): void {
 }
 
 // Cleanup every 5 minutes
-if (typeof setInterval !== 'undefined') {
-    setInterval(cleanupRateLimits, 5 * 60 * 1000);
+// GLOBAL PATCH: Only start interval if not already running (HMR fix)
+if (typeof setInterval !== 'undefined' && !globalStore._rateLimitInterval) {
+    globalStore._rateLimitInterval = setInterval(cleanupRateLimits, 5 * 60 * 1000);
 }

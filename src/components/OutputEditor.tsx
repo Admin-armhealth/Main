@@ -17,10 +17,11 @@ interface OutputEditorProps {
     };
     qualityData?: { score: number | null; reasoning: string | null };
     onSave?: (verified: boolean) => void;
+    onStartOver?: () => void;
     requestId?: string; // For submission pack export
 }
 
-export function OutputEditor({ initialContent, onRegenerate, isGenerating, extractedData, qualityData, onSave, requestId }: OutputEditorProps) {
+export function OutputEditor({ initialContent, onRegenerate, isGenerating, extractedData, qualityData, onSave, onStartOver, requestId }: OutputEditorProps) {
     const [content, setContent] = useState(initialContent);
     const [copied, setCopied] = useState(false);
     const [mode, setMode] = useState<'preview' | 'edit'>('preview');
@@ -252,6 +253,15 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
                         <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isGenerating ? 'animate-spin' : ''}`} />
                         {isGenerating ? 'Refining...' : 'Regenerate'}
                     </button>
+                    {onStartOver && (
+                        <button
+                            onClick={onStartOver}
+                            disabled={isGenerating}
+                            className="flex items-center px-3 py-1.5 text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ml-2"
+                        >
+                            Start New Request
+                        </button>
+                    )}
                 </div>
             </div>
 

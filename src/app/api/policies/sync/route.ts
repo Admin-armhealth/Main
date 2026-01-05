@@ -27,10 +27,12 @@ export async function POST(request: NextRequest) {
 
     try {
         // 1. Fetch all policies with a URL
+        // OPTIMIZATION: Only fetch 5 records at a time to prevent memory overflow
         const { data: policies, error } = await supabase
             .from('policies')
             .select(`id, title, source_url, content_hash`)
-            .not('source_url', 'is', null);
+            .not('source_url', 'is', null)
+            .range(0, 4);
 
         if (error) throw error;
         if (!policies || policies.length === 0) {
@@ -42,8 +44,8 @@ export async function POST(request: NextRequest) {
         let unchanged = 0;
 
         // 2. Process each policy (In a real queue, this would be a specialized job)
-        // For MVP, we limit to 5 to avoid timeouts or IP blocks
-        const batch = policies.slice(0, 5);
+        // We already limited the fetch to 5
+        const batch = policies;
 
         for (const policy of batch) {
             try {

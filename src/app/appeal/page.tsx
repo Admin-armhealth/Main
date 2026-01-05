@@ -97,6 +97,17 @@ function AppealPageContent() {
         // regenerate logic (omitted for brevity, typically re-calls generate with last input)
     };
 
+    const handleStartOver = () => {
+        setGeneratedContent('');
+        setAuditData({
+            approval_likelihood: 0,
+            checklist: [],
+            missing_info: [],
+            denial_risk_factors: []
+        });
+        setStep(1);
+    };
+
     return (
         <div className="h-[calc(100vh-64px)] overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
@@ -111,7 +122,21 @@ function AppealPageContent() {
                 <div className="flex-1 overflow-auto p-8">
                     <UploadForm
                         title="Create Appeal Letter"
-                        description="Upload the **Denial Letter** and meaningful clinical notes."
+                        description="Please upload the Denial Letter and supporting Clinical Notes."
+                        uploadSegments={[
+                            {
+                                label: "Denial Letter",
+                                description: "Upload the official denial letter from the payer.",
+                                key: "denial",
+                                required: true
+                            },
+                            {
+                                label: "Clinical Notes",
+                                description: "Upload relevant chart notes, imaging reports, or provider documentation.",
+                                key: "notes",
+                                required: true
+                            }
+                        ]}
                         onConfirm={handleGenerate}
                     />
                 </div>
@@ -134,6 +159,7 @@ function AppealPageContent() {
                                 initialContent={generatedContent}
                                 onRegenerate={handleRegenerate}
                                 isGenerating={isGenerating}
+                                onStartOver={handleStartOver}
                             />
                         </div>
                     </div>

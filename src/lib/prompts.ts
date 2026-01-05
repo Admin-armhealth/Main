@@ -258,6 +258,7 @@ Adhere to the following rules:
 5. Only use placeholders if specific data was NOT provided.
 6. Today's date is: ${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}.
 7. Structure the output with clear headings: "Case Summary", "Clinical Justification", "Response to Denial", "Closing".
+8. NEGATIVE CONSTRAINT: Do NOT generate a "Pre-Authorization Request". This is an APPEAL for an already denied claim. The context may contain the original denial letter; do NOT regurgitate it as your own request.
 ${patientInfo}
 ${providerInfo}`;
 
@@ -288,7 +289,7 @@ Re: Appeal for Denied Claim
 **Reason for Denial:**
 "${input.denialReason}"
 
-**Extracted Clinical Notes:**
+**Supporting Documentation (Denial Letter + Clinical Notes):**
 """
 ${redactPHI(input.extractedText, input.patientRaw?.name)}
 """

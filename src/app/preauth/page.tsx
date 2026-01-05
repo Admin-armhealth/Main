@@ -63,6 +63,11 @@ export default function PreAuthPage() {
         }
     };
 
+    const handleStartOver = () => {
+        setGeneratedContent('');
+        setStep(1);
+    };
+
     // Resume/History Loading Logic
     useEffect(() => {
         // Simple URL param check without heavy router dependency if possible, or use window
@@ -171,6 +176,7 @@ export default function PreAuthPage() {
                             initialContent={generatedContent}
                             onRegenerate={handleRegenerate}
                             isGenerating={isGenerating}
+                            onStartOver={handleStartOver}
                             extractedData={{
                                 patientRaw: lastInput?.codes.patientRaw,
                                 cptCodes: lastInput?.codes.cpt,
