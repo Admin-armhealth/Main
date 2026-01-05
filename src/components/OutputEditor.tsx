@@ -80,90 +80,101 @@ export function OutputEditor({ initialContent, onRegenerate, isGenerating, extra
 
     const handleDownloadPDF = async () => {
         try {
-            console.log('Starting PDF generation...');
+            if (typeof window === 'undefined') return;
+
+            // Ensure mode is preview
             if (mode !== 'preview') {
                 setMode('preview');
-                // Allow render cycle to complete
-                await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for render
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
 
             const element = document.getElementById('preview-content');
             if (!element) {
-                console.error('PDF Error: Preview element not found');
                 alert('Could not find document content. Please switch to Preview mode.');
                 return;
             }
 
-            const date = new Date();
-            const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            const filename = `Medical_PreAuth_${timestamp}.pdf`;
+            // Create hidden iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
 
-            // CRITICAL FIX: Get the FULL scrollable height of the content
-            const fullHeight = element.scrollHeight;
-            const fullWidth = element.scrollWidth;
-            console.log(`Content dimensions: ${fullWidth}x${fullHeight}`);
-
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5], // Uniform margins
-                filename: filename,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    logging: true,
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: fullWidth,
-                    windowHeight: fullHeight, // CRITICAL: Set to full height
-                    height: fullHeight, // CRITICAL: Capture full height
-                    width: fullWidth,
-                },
-                // CRITICAL FIX: Allow page breaks naturally
-                pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: 'img' },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            } as any;
-
-            // Robust Import
-            console.log('Importing html2pdf...');
-            const html2pdfModule = await import('html2pdf.js');
-            const html2pdf = html2pdfModule.default || html2pdfModule;
-
-            if (!html2pdf) {
-                throw new Error('Failed to load PDF library');
+            const doc = iframe.contentWindow?.document;
+            if (!doc) {
+                document.body.removeChild(iframe);
+                throw new Error('Could not create print iframe');
             }
 
-            console.log('Generating PDF...');
-            // CLONE and APPEND to body to ensure html2canvas can render computed styles
-            const clonedElement = element.cloneNode(true) as HTMLElement;
+            // Write content
+            const date = new Date().toLocaleDateString();
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Medical Pre-Authorization</title>
+                    <style>
+                        @page { margin: 0.5in; size: letter; }
+                        body { 
+                            font-family: Arial, Helvetica, sans-serif; 
+                            line-height: 1.5; 
+                            color: #000;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        h1 { font-size: 18pt; margin-bottom: 16px; page-break-after: avoid; }
+                        h2 { font-size: 14pt; margin-top: 20px; margin-bottom: 12px; page-break-after: avoid; }
+                        h3 { font-size: 12pt; margin-top: 16px; margin-bottom: 8px; page-break-after: avoid; }
+                        p { margin-bottom: 10px; font-size: 11pt; text-align: justify; }
+                        ul, ol { margin-bottom: 10px; padding-left: 24px; }
+                        li { margin-bottom: 4px; font-size: 11pt; }
+                        .header { margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+                        .footer { margin-top: 30px; font-size: 8pt; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+                        
+                        /* Strip Tailwind classes impact */
+                        * { box-sizing: border-box; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <strong>Pre-Authorization Request</strong><br>
+                        Generated: ${date}
+                    </div>
+                    
+                    ${element.innerHTML}
+                    
+                    <div class="footer">
+                        Generated by ARM Health AI • HIPAA Compliant Output
+                    </div>
+                </body>
+                </html>
+            `);
+            doc.close();
 
-            // CRITICAL FIX: Style clone to show FULL content, not constrained
-            Object.assign(clonedElement.style, {
-                position: 'absolute',
-                left: '-9999px',
-                top: '0',
-                width: `${fullWidth}px`, // Use actual width
-                minHeight: `${fullHeight}px`, // Use actual height
-                height: 'auto', // Allow natural expansion
-                maxHeight: 'none', // Remove any max-height constraints
-                overflow: 'visible', // Ensure content is not hidden
-                zIndex: '-1000'
-            });
-            document.body.appendChild(clonedElement);
+            // Wait for resources then print
+            setTimeout(() => {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
 
-            try {
-                console.log('Generating PDF from clone...');
-                await html2pdf().set(opt).from(clonedElement).save();
-                console.log('PDF Saved!');
-            } finally {
-                // CLEANUP: Always remove the clone, even if PDF generation fails
-                if (document.body.contains(clonedElement)) {
-                    document.body.removeChild(clonedElement);
-                }
-            }
+                // Cleanup after print dialog usage (approx 1s delay to ensure dialog opened)
+                // Note: We can't detect when print dialog closes in all browsers, 
+                // but removing iframe immediately usually works after print() returns or blocks.
+                // Safest is to leave it or remove after a delay.
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, 2000);
+            }, 500);
 
         } catch (error) {
             console.error('PDF Generation Failed:', error);
-            // Fallback to browser print which is robust and now styled
+            // Last resort fallback
             window.print();
         }
     };

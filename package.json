@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "hipaa:check": "node scripts/hipaa_compliance_check.mjs"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",

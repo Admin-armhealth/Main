@@ -79,19 +79,38 @@ BCBS STYLE GUIDE:
         ? `\n\n${payerStyleGuide[input.payer]}`
         : '';
 
+    // Build patient/provider info for AI to use
+    const patientInfo = input.patientRaw ? `
+PATIENT DATA (Use these exact values in the letter):
+- Patient Name: ${input.patientRaw.name || '[Patient Name]'}
+- Date of Birth: ${input.patientRaw.dob || '[DOB]'}
+- Member ID: ${input.patientRaw.id || '[Member ID]'}` : '';
+
+    const providerInfo = input.providerRaw ? `
+PROVIDER DATA (Use these exact values in the letter):
+- Provider Name: ${input.providerRaw.name || '[Provider Name]'}
+- Clinic/Facility: ${input.providerRaw.clinicName || '[Clinic Name]'}
+- NPI: ${input.providerRaw.npi || '[NPI]'}
+- Tax ID: ${input.providerRaw.tin || '[Tax ID]'}` : '';
+
     const systemPrompt = `You are an expert medical billing and insurance pre-authorization specialist. 
 Your goal is to draft a professional, insurer-ready pre-authorization request letter.
 Adhere to the following rules:
 1. Tone: ${requestedTone}.
 2. Be concise but thorough in justifying medical necessity.
 3. CLEARLY list CPT and ICD codes.
-4. DO NOT hallucinate patient identifiers if they are not present. Use placeholders like [Patient Name] if needed.
+4. CRITICAL: Use the ACTUAL patient and provider data provided below - DO NOT use placeholders like [Patient Name] or [DOB] when the real data is available.
+5. Only use placeholders if specific data was NOT provided.
+6. Today's date is: ${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}.
 7. PREVENT DENIALS: Use explicit failure language. E.g., "Symptoms persist despite ≥6 weeks of conservative therapy".
 8. READABILITY RULES: 
    - Paragraphs must be short (max 4 sentences). 
    - Use bullet points for all clinical evidence.
    - Insert a "KEY EVIDENCE SUMMARY" box at the very top of the letter.
-9. Structure the output with clear headings: "KEY EVIDENCE SUMMARY", "Patient Summary", "Diagnosis & Rationale", "Medical Necessity", "CPT/ICD Codes".${specialtyInstruction}${payerInstruction}`;
+9. Structure the output with clear headings: "KEY EVIDENCE SUMMARY", "Patient Summary", "Diagnosis & Rationale", "Medical Necessity", "CPT/ICD Codes".
+${patientInfo}
+${providerInfo}
+${specialtyInstruction}${payerInstruction}`;
 
     const customHeader = input.templates?.header ? `${input.templates.header}\n\n` : '';
     const customSignature = input.templates?.signature ? `\n\n${input.templates.signature}` : '';
@@ -215,31 +234,54 @@ export function getAppealPrompt(input: {
 
     const requestedTone = input.templates?.tone ? toneMap[input.templates.tone] || toneMap['standard'] : toneMap['standard'];
 
+    // Build patient/provider info for AI to use
+    const patientInfo = input.patientRaw ? `
+PATIENT DATA (Use these exact values in the letter):
+- Patient Name: ${input.patientRaw.name || '[Patient Name]'}
+- Date of Birth: ${input.patientRaw.dob || '[DOB]'}
+- Member ID: ${input.patientRaw.id || '[Member ID]'}` : '';
+
+    const providerInfo = input.providerRaw ? `
+PROVIDER DATA (Use these exact values in the letter):
+- Provider Name: ${input.providerRaw.name || '[Provider Name]'}
+- Clinic/Facility: ${input.providerRaw.clinicName || '[Clinic Name]'}
+- NPI: ${input.providerRaw.npi || '[NPI]'}
+- Tax ID: ${input.providerRaw.tin || '[Tax ID]'}` : '';
+
     const systemPrompt = `You are an expert medical billing and insurance appeal specialist.
 Your goal is to draft a strong appeal letter for a denied claim.
 Adhere to the following rules:
 1. Tone: ${requestedTone}.
 2. Directly address the denial reason with clinical evidence from the provided notes.
 3. Cite generic clinical guidelines if applicable (e.g., "per standard referencing guidelines") without fabricating specific non-existent papers.
-4. Structure the output with clear headings: "Case Summary", "Clinical Justification", "Response to Denial", "Closing".`;
+4. CRITICAL: Use the ACTUAL patient and provider data provided below - DO NOT use placeholders like [Patient Name] or [DOB] when the real data is available.
+5. Only use placeholders if specific data was NOT provided.
+6. Today's date is: ${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}.
+7. Structure the output with clear headings: "Case Summary", "Clinical Justification", "Response to Denial", "Closing".
+${patientInfo}
+${providerInfo}`;
 
     const customHeader = input.templates?.header ? `${input.templates.header}\n\n` : '';
     const customSignature = input.templates?.signature ? `\n\n${input.templates.signature}` : '';
+
+    // Use actual patient data in template
+    const patientName = input.patientRaw?.name || '[Patient Name]';
+    const patientDob = input.patientRaw?.dob || '[DOB]';
+    const patientId = input.patientRaw?.id || '[Member ID]';
 
     const userPrompt = `
 ${customHeader}Date: ${new Date().toLocaleDateString()}
 Re: Appeal for Denied Claim
 
-**Patient Name:** [PATIENT]
-**Member ID:** [ID]
-**DOB:** [DOB]
+**Patient Name:** ${patientName}
+**Member ID:** ${patientId}
+**DOB:** ${patientDob}
 
 **Provider:** ${input.providerRaw?.name || '[Name]'}
 **Facility:** ${input.providerRaw?.clinicName || '[Clinic]'}
 **NPI:** ${input.providerRaw?.npi || '[NPI]'} | **TIN:** ${input.providerRaw?.tin || '[TIN]'}
 
-**Service Date / Reference:** [Please Insert Date]
-**Claims Reference Number:** [Insert Claim #]
+**Service Date / Reference:** ${new Date().toLocaleDateString()}
 **CPT Codes:** ${input.cptCodes?.join(', ') || 'N/A'}
 **ICD Codes:** ${input.icdCodes?.join(', ') || 'N/A'}
 

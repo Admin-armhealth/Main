@@ -9,8 +9,11 @@ export async function parsePdfBuffer(buffer: Buffer): Promise<string> {
     try {
         // unpdf requires Uint8Array, not Node.js Buffer
         const uint8Array = new Uint8Array(buffer);
-        const { text } = await extractText(uint8Array);
-        return text.trim();
+
+        // mergePages: true returns a single string instead of array of strings
+        const { text } = await extractText(uint8Array, { mergePages: true });
+
+        return (text || '').trim();
     } catch (error) {
         console.error('PDF Parse Error:', error);
         throw new Error(`Failed to parse PDF document: ${error instanceof Error ? error.message : String(error)}`);

@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
         const draft = await generateText({
             systemPrompt: systemPrompt,
             userPrompt: userPrompt,
-            temperature: 0.3,
+            temperature: 0.0,
         });
 
         // PASS 2: AI Guardrail / Critique
