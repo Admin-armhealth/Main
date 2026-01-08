@@ -30,6 +30,39 @@ export async function GET(request: NextRequest) {
         // but let's assume we query for the user_id or rely on RLS)
         // Check my RLS: "Users can read own logs".
 
+        // 3a. Fetch Recent Activity (Requests table)
+        // We wrap in try/catch in case the migration hasn't run yet to prevent crashing the whole dashboard.
+        let recentRequests: any[] = [];
+        try {
+            const { data: requests, error: reqError } = await supabase
+                .from('requests')
+                .select('id, title, request_type, status, created_at, output_data')
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (!reqError && requests) {
+                recentRequests = requests;
+            }
+        } catch (err: any) {
+            console.warn("Requests table not ready yet:", err.message);
+        }
+
+        // 3b. Fetch Policy Alerts (New Feature)
+        let recentAlerts: any[] = [];
+        try {
+            const { data: alerts, error: alertError } = await supabase
+                .from('policy_changes')
+                .select('*, policies(title, payer)')
+                .order('detected_at', { ascending: false })
+                .limit(3);
+
+            if (!alertError && alerts) {
+                recentAlerts = alerts;
+            }
+        } catch (err: any) {
+            console.warn("Policy Changes table not ready yet:", err.message);
+        }
+
         const { data: logs, error } = await supabase
             .from('audit_logs')
             .select('*')
@@ -86,7 +119,9 @@ export async function GET(request: NextRequest) {
                 totalSavedMoney,
                 totalSavedTimeHours,
                 avgQuality,
-                topPayers
+                topPayers,
+                recentRequests,
+                recentAlerts
             }
         });
 

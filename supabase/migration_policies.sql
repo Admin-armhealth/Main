@@ -9,14 +9,21 @@ create table if not exists policies (
   
   -- The Knowledge
   title text,                -- e.g., 'Total Knee Arthroplasty (Commercial)'
-  policy_content text,       -- The actual simplified rules (e.g., "BMI < 40, 6 weeks PT")
-  source_url text,           -- Link to the PDF/Site
+  policy_content text,       -- Human readable summary (Legacy/fallback)
   
+  -- THE MOAT (Structured Logic)
+  -- Schema: { "criteria": [{ "id": "bmi", "operator": "<", "value": 40 }] }
+  structured_content jsonb,
+  
+  -- The Source Tracking (Engine)
+  source_url text,           -- Link to the PDF/Site
+  content_hash text,         -- SHA256 of the raw text (to detect updates)
+  last_checked_at timestamp with time zone,
+  last_updated_at timestamp with time zone,
+
   -- The Scope (Answer to "Who maintains it?")
   organization_id uuid references organizations(id), 
-  -- IF NULL: It is a GLOBAL rule (Maintained by You/System)
-  -- IF SET: It is a CLINIC rule (Private Override)
-
+  
   -- Search Index (Simple)
   unique(payer, cpt_code, organization_id)
 );
@@ -36,14 +43,22 @@ create policy "Read Global and Org Policies"
     )
   );
 
--- 2. WRITE: Only Admins (or Users for their own Org) can insert.
--- For MVP, we'll allow Authenticated users to write to their OWN Org, 
--- or write Global if they are 'system_admin' (we don't have that role yet, so let's stick to Org write).
+-- 2. WRITE: Only Admins can insert Global. Users can insert Private.
 create policy "Users can add Private Rules"
   on policies for insert
   with check (
     organization_id in (
       select organization_id from user_profiles 
       where id = auth.uid()
+    )
+  );
+  
+-- 3. UPDATE: Sync Engine (Service Role) bypasses RLS, but for users:
+create policy "Users can update Private Rules"
+  on policies for update
+  using (
+    organization_id in (
+        select organization_id from user_profiles 
+        where id = auth.uid()
     )
   );

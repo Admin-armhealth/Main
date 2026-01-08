@@ -132,12 +132,26 @@ export default function PreAuthPage() {
             {step === 1 && (
                 <UploadForm
                     title="Create Pre-Authorization Request"
-                    description="Upload clinical notes/patient history to generate a formal request."
+                    description="Upload details to generate a formal request. Please provide both Clinical Notes and the Prior Auth Form."
                     onConfirm={handleGenerate}
                     initialValues={lastInput ? {
                         text: lastInput.text,
                         ...lastInput.codes
                     } : null}
+                    uploadSegments={[
+                        {
+                            label: 'Clinical Notes',
+                            key: 'clinical_notes',
+                            description: 'Upload patient chart notes, consult reports, or imaging results.',
+                            required: true
+                        },
+                        {
+                            label: 'Pre-Auth Form / Check',
+                            key: 'auth_form',
+                            description: 'Upload the specific Insurance Form or prior request to check against.',
+                            required: false
+                        }
+                    ]}
                 />
             )}
 

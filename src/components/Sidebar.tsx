@@ -10,10 +10,10 @@ export function Sidebar() {
 
     const navItems = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'New Pre-Auth', href: '/preauth', icon: FileText },
-        { name: 'New Appeal', href: '/appeal', icon: ShieldAlert },
-        { name: 'Auto-Fill Forms', href: '/forms', icon: FileText },
-        { name: 'Policies (Brain)', href: '/admin/policies', icon: BookOpen },
+        { name: 'History / Cases', href: '/history', icon: History },
+        { name: 'Pre Auth', href: '/preauth', icon: FileText },
+        { name: 'Draft Appeal', href: '/appeal', icon: FileText },
+        { name: 'Policy Library', href: '/policies', icon: BookOpen },
         { name: 'Settings', href: '/settings', icon: Settings },
     ];
 

@@ -1,33 +1,88 @@
--- Seed Data for Policies Table
--- Run this in the Supabase SQL Editor to populate your "Brain" with starter rules.
+-- Seed Data for Policies Table - REAL URLs for Sync Engine
+-- Note: 'policy_content' is left null/placeholder so the Sync Engine detects it needs to fetch.
 
-insert into policies (payer, cpt_code, title, policy_content, source_url)
+truncate table policies cascade; 
+
+insert into policies (payer, cpt_code, title, source_url)
 values
+-- ==========================================
+-- AETNA
+-- ==========================================
 (
   'Aetna',
-  '73721',
-  'MRI of Knee (Commercial)',
-  '- MENISCAL TEAR: Must have functional limitations AND failure of 6 weeks NSAIDs/PT.
-- LIGAMENT TEAR: Positive physical exam findings (Lachman/McMurray) required.
-- OSTEOARTHRITIS: MRI not indicated if X-ray shows severe degeneration (Grade 4).',
-  'https://www.aetna.com/cpb/medical/data/1_99/0002.html'
+  '72148',
+  'MRI of the Spine (Lumbar)',
+  'https://www.aetna.com/cpb/medical/data/200_299/0236.html'
 ),
+(
+  'Aetna',
+  '66984',
+  'Cataract Surgery',
+  'https://www.aetna.com/cpb/medical/data/500_599/0508.html'
+),
+(
+  'Aetna',
+  '27130',
+  'Total Hip Arthroplasty',
+  'https://www.aetna.com/cpb/medical/data/200_299/0287.html'
+),
+(
+  'Aetna',
+  '97110',
+  'Physical Therapy Services',
+  'https://www.aetna.com/cpb/medical/data/300_399/0325.html'
+),
+(
+  'Aetna',
+  'J1347',
+  'Wegovy (Weight Management)',
+  'https://www.aetna.com/cpb/medical/data/new/0002.html' 
+  -- Note: Placeholder URL for Wegovy as it varies by plan, using generic CPB structure
+),
+
+-- ==========================================
+-- CIGNA
+-- ==========================================
 (
   'Cigna',
   '27447',
   'Total Knee Arthroplasty',
-  '- BMI Requirement: Must be < 40.
-- Conservative Therapy: 3 months of failed non-operative management (injections, PT, bracing).
-- Radiographic Evidence: Kellgren-Lawrence Grade 3 or 4 required.
-- Pain: Daily pain impacting ADLs provided.',
   'https://static.cigna.com/assets/chcp/pdf/coveragePolicies/medical/mm_0055_coveragepositioncriteria_total_knee_replacement.pdf'
 ),
+(
+  'Cigna',
+  '43644',
+  'Bariatric Surgery',
+  'https://static.cigna.com/assets/chcp/pdf/coveragePolicies/medical/mm_0051_coveragepositioncriteria_bariatric_surgery.pdf'
+),
+(
+  'Cigna',
+  '81220',
+  'Genetic Testing (General)',
+  'https://static.cigna.com/assets/chcp/pdf/coveragePolicies/medical/mm_0001_coveragepositioncriteria_genetic_testing.pdf'
+),
+
+-- ==========================================
+-- UNITED HEALTHCARE (UHC)
+-- ==========================================
 (
   'UnitedHealthcare',
   '93015',
   'Cardiovascular Stress Testing',
-  '- SYMPTOMATIC: Chest pain or dyspnea on exertion.
-- ASYMPTOMATIC: High global risk score (>20% 10-year risk).
-- Pre-Operative: Only for High-Risk surgery with poor functional capacity (<4 METs).',
   'https://www.uhcprovider.com/content/dam/provider/docs/public/policies/comm-medical-drug/cardiovascular-stress-testing.pdf'
-);
+),
+(
+  'UnitedHealthcare',
+  'E0601',
+  'CPAP for Sleep Apnea',
+  'https://www.uhcprovider.com/content/dam/provider/docs/public/policies/comm-medical-drug/obstructive-sleep-apnea-treatment.pdf'
+),
+(
+  'UnitedHealthcare',
+  '22849',
+  'Spinal Fusion and Decompression',
+  'https://www.uhcprovider.com/content/dam/provider/docs/public/policies/comm-medical-drug/spinal-fusion-decompression.pdf'
+)
+
+on conflict (payer, cpt_code, organization_id) 
+do update set source_url = excluded.source_url;

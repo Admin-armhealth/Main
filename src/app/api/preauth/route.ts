@@ -64,21 +64,38 @@ export async function POST(req: NextRequest) {
         }
 
         // INTELLIGENCE LAYER: Policy Injection (Simple RAG)
+        // INTELLIGENCE LAYER: Policy Injection (New Policy Engine)
         let policyContext = '';
-        if (payer && cptCodes?.length > 0) {
-            const { data: policies } = await supabase
-                .from('policies')
-                .select('title, policy_content')
-                .eq('payer', payer)
-                .in('cpt_code', cptCodes)
-                .limit(3);
+        if (cptCodes?.length > 0) {
+            console.log(`🔍 PreAuth: Looking up policies for CPTs: ${cptCodes.join(', ')}...`);
 
-            if (policies && policies.length > 0) {
-                policyContext = `\n\nOFFICIAL INSURER GUIDELINES (${payer}):\n`;
-                policies.forEach(p => {
-                    policyContext += `\n[${p.title}]\n${p.policy_content}\n`;
-                });
-                console.log(`Injecting Policy Context for ${payer}`);
+            // 1. Find Policy IDs via policy_codes table
+            const { data: codes } = await supabase
+                .from('policy_codes')
+                .select('policy_id, code')
+                .in('code', cptCodes);
+
+            if (codes && codes.length > 0) {
+                const uniquePolicyIds = Array.from(new Set(codes.map(c => c.policy_id)));
+
+                // 2. Fetch Section Content for these policies (The Rules)
+                // Limit to avoiding blowing up tokens (e.g., first 2 sections or specific ones)
+                const { data: sections } = await supabase
+                    .from('policy_sections')
+                    .select('section_title, content, policies(title)')
+                    .in('policy_id', uniquePolicyIds)
+                    .limit(5); // Safety limit
+
+                if (sections && sections.length > 0) {
+                    policyContext = `\n\nOFFICIAL INSURER GUIDELINES (Use these to justify medical necessity):\n`;
+                    sections.forEach(s => {
+                        // Truncate huge sections if needed, but for now rely on text generation limits to handle or robust prompt
+                        const snippet = s.content ? s.content.substring(0, 5000) : "";
+                        const title = (s.policies as any)?.title || "Policy";
+                        policyContext += `\n[${title} - ${s.section_title}]\n${snippet}\n`;
+                    });
+                    console.log(`   ✅ Injected ${sections.length} policy sections into AI Context.`);
+                }
             }
         }
 
