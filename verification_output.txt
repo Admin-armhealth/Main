@@ -1,0 +1,35 @@
+
+📄 Latest Policy: [CPB-0008] Color-Flow Doppler Echocardiography and Myocardial Strain Imaging in Adults
+   Source: https://www.aetna.com/cpb/medical/data/1_99/0008.html
+   Last Scraped: 2026-01-09T03:22:09.456+00:00
+   Status: active
+   ID: 2a730c17-0506-46b9-bc35-3e7be84486f9
+
+📚 Sections (1):
+   - Full Content (Order 1, Size: 124343 chars)
+
+⚖️ Rules (8):
+   Rule 1 [Procedure]: MATCH_ONE
+     Value: ["93325"]
+     Fail Msg: Policy applies to color-flow Doppler echocardiography (CPT 93325).
+   Rule 2 [Medical Necessity - Color-Flow Doppler Echocardiography (Adults) Indications]: MATCH_ONE
+     Value: ["During excision of left atrial mass","Evaluation of angina","Evaluation of aortic diseases","Evalu... (truncated)
+     Fail Msg: Color-flow Doppler echocardiography in adults is medically necessary only for the listed indications; otherwise it is experimental/investigational/unproven.
+   Rule 3 [Medical Necessity - Myocardial Strain Imaging (Pathway 1: LVH initial evaluation)]: CONTAINS
+     Value: {"scenario":"Initial evaluation of left ventricular hypertrophy (LVH) in addition to the primary ech... (truncated)
+     Fail Msg: Myocardial strain imaging for initial LVH evaluation requires documentation of BOTH unclear etiology AND concern for infiltrative cardiomyopathy (in addition to the primary echocardiogram).
+   Rule 4 [Medical Necessity - Myocardial Strain Imaging (Pathway 2: Cardiotoxic therapy)]: CONTAINS
+     Value: {"scenario":"In addition to the primary echocardiogram for individuals receiving therapy with cardio... (truncated)
+     Fail Msg: Myocardial strain imaging with cardiotoxic therapy is medically necessary only when performed in addition to the primary echocardiogram and for one of the listed cardiotoxic-therapy scenarios.
+   Rule 5 [Experimental/Investigational - Color-Flow Doppler Echocardiography (Adults)]: CONTAINS
+     Value: ["All other indications","Guide catheter ablation in ventricular tachycardia"]
+     Fail Msg: Color-flow Doppler echocardiography in adults is experimental/investigational/unproven for indications not listed as medically necessary (e.g., to guide catheter ablation in ventricular tachycardia).
+   Rule 6 [CPT - Covered if Selection Criteria Met]: MATCH_ONE
+     Value: ["93325"]
+     Fail Msg: CPT 93325 is covered only when medical-necessity selection criteria are met.
+   Rule 7 [ICD-10 - Covered if Selection Criteria Met]: MATCH_ONE
+     Value: ["A40.0-A40.9","A41.01-A41.02","A41.1-A41.2","A41.3","A41.4","A41.50","A41.51","A41.52","A41.53","A5... (truncated)
+     Fail Msg: Diagnosis must match one of the listed ICD-10 codes (and any stated billing constraints) when selection criteria are required.
+   Rule 8 [ICD-10 Billing Constraint]: CONTAINS
+     Value: [{"if_icd10":"B39.4","must_also_bill_with_icd10":"I32"},{"if_icd10":"B39.4","must_also_bill_with_icd... (truncated)
+     Fail Msg: If ICD-10 B39.4 is billed, it must also be billed with I32 (pericarditis) or I39 (endocarditis), as specified by the policy.

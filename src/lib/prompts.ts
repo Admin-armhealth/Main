@@ -108,6 +108,7 @@ Adhere to the following rules:
    - Use bullet points for all clinical evidence.
    - Insert a "KEY EVIDENCE SUMMARY" box at the very top of the letter.
 9. Structure the output with clear headings: "KEY EVIDENCE SUMMARY", "Patient Summary", "Diagnosis & Rationale", "Medical Necessity", "CPT/ICD Codes".
+10. NEGATIVE CONSTRAINT: Do NOT include any "Appeal", "Rebuttal", "Denial Reason", or "If this is an appeal" sections. This is a first-time Pre-Authorization request.
 ${patientInfo}
 ${providerInfo}
 ${specialtyInstruction}${payerInstruction}`;

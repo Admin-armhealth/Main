@@ -23,9 +23,9 @@ async function check() {
         console.log(`✅ Total Policies in DB: ${count}`);
     }
 
-    // Check one item with organization_id and source_url
-    const { data } = await supabase.from('policies').select('title, organization_id, source_url').limit(5);
-    console.log("Sample Data:", data);
+    // List ALL codes to debug
+    const { data } = await supabase.from('policies').select('title, cpt_code').limit(20);
+    console.log("Available Policies:", data);
 }
 
 check();
